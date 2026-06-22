@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { prisma } from "@/lib/prisma";
+import { createSymbolWallet } from "@/lib/symbolWallet";
+import { encryptText } from "@/lib/crypto";
 
 export async function POST(req: Request) {
   try {
@@ -18,6 +20,9 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const wallet = createSymbolWallet();
+    const encryptedPrivateKey = encryptText(wallet.encryptedPrivateKey);
+    const now = new Date();
 
     const user = await prisma.user.create({
       data: {
@@ -26,9 +31,9 @@ export async function POST(req: Request) {
         passwordHash,
         wallet: {
             create: {
-                symbolAddress: `TEMP_ADDRESS_${Date.now()}`,
-                symbolPublicKey: `TEMP_PUBLIC_KEY_${Date.now()}`,
-                encryptedPrivateKey: `TEMP_ENCRYPTED_PRIVATE_KEY_${Date.now()}`,
+                symbolAddress: wallet.symbolAddress,
+                symbolPublicKey: wallet.symbolPublicKey,
+                encryptedPrivateKey: encryptedPrivateKey,
             },
         },
         nft: {
