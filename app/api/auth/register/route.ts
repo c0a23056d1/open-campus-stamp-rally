@@ -24,6 +24,25 @@ export async function POST(req: Request) {
         name,
         email,
         passwordHash,
+        wallet: {
+            create: {
+                symbolAddress: `TEMP_ADDRESS_${Date.now()}`,
+                symbolPublicKey: `TEMP_PUBLIC_KEY_${Date.now()}`,
+                encryptedPrivateKey: `TEMP_ENCRYPTED_PRIVATE_KEY_${Date.now()}`,
+            },
+        },
+        nft: {
+            create: {
+                nftId: `OC_PASS_${Date.now()}`,
+                level: 0,
+                title: "Beginner",
+                stampCount: 0,
+            },
+        },
+      },
+      include: {
+        wallet: true,
+        nft: true,
       },
     });
 
@@ -32,6 +51,8 @@ export async function POST(req: Request) {
       userId: user.id,
       name: user.name,
       email: user.email,
+      wallet: user.wallet,
+      nft: user.nft,
     });
   } catch (error) {
     console.error(error);
