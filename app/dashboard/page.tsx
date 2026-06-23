@@ -59,6 +59,21 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
+  const handleIssueNFT = async () => {
+    const userId = localStorage.getItem("userId");
+
+    const res = await fetch("/api/nft/issue", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId }),
+    });
+
+    const data = await res.json();
+    alert(data.message);
+  };
+
   if (!passport) {
     return <div style={{ padding: "20px" }}>読み込み中...</div>;
   }
@@ -88,7 +103,6 @@ export default function DashboardPage() {
 
       <h2>Wallet</h2>
       <p>Symbolアドレス：{passport.wallet?.symbolAddress}</p>
-
       <hr />
       <button onClick={() => router.push("/scan")}>
         スタンプ取得画面へ

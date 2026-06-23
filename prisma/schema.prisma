@@ -44,6 +44,10 @@ model NFT {
   title      String?
   stampCount Int      @default(0)
 
+  mosaicId String?
+  issueTxHash String?
+  issueAt DateTime?
+
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
