@@ -103,11 +103,6 @@ export default function DashboardPage() {
 
       <h2>Wallet</h2>
       <p>Symbolアドレス：{passport.wallet?.symbolAddress}</p>
-
-      <hr />
-      <button onClick={handleIssueNFT}>
-        初期NFT付与テスト
-      </button>
       <hr />
       <button onClick={() => router.push("/scan")}>
         スタンプ取得画面へ
