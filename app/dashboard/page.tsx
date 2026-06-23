@@ -90,6 +90,9 @@ export default function DashboardPage() {
       <p>Symbolアドレス：{passport.wallet?.symbolAddress}</p>
 
       <hr />
+      <button onClick={() => router.push("/scan")}>
+        スタンプ取得画面へ
+      </button>
 
       <h2>取得スタンプ</h2>
       {passport.stamps.length === 0 ? (
