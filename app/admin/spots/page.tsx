@@ -1,0 +1,161 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import QRCode from "qrcode";
+import { useRouter } from "next/navigation";
+
+type Spot = {
+  id: number;
+  spotName: string;
+  floor: string;
+  description: string | null;
+  qrSecretCode: string;
+};
+
+export default function AdminSpotsPage() {
+  const router = useRouter();
+
+  const [spotName, setSpotName] = useState("");
+  const [floor, setFloor] = useState("");
+  const [description, setDescription] = useState("");
+  const [spots, setSpots] = useState<Spot[]>([]);
+  const [qrImages, setQrImages] = useState<Record<number, string>>({});
+
+  const fetchSpots = async () => {
+    const userId = localStorage.getItem("userId");
+
+    const res = await fetch(`/api/admin/spots?userId=${userId}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message);
+      router.push("/dashboard");
+      return;
+    }
+
+    setSpots(data.spots);
+
+    const images: Record<number, string> = {};
+
+    for (const spot of data.spots) {
+      images[spot.id] = await QRCode.toDataURL(spot.qrSecretCode);
+    }
+
+    setQrImages(images);
+  };
+
+  useEffect(() => {
+    fetchSpots();
+  }, []);
+
+  const handleCreateSpot = async () => {
+    const userId = localStorage.getItem("userId");
+
+    const res = await fetch("/api/admin/spots", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        spotName,
+        floor,
+        description,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message);
+      return;
+    }
+
+    alert(data.message);
+
+    setSpotName("");
+    setFloor("");
+    setDescription("");
+
+    fetchSpots();
+  };
+
+  return (
+    <div style={{ padding: "20px" }}>
+      <h1>QR発行画面</h1>
+
+      <button onClick={() => router.push("/admin")}>管理者トップへ戻る</button>
+
+      <hr />
+
+      <h2>スポット登録</h2>
+
+      <div>
+        <label>研究室名・スポット名</label>
+        <br />
+        <input
+          value={spotName}
+          onChange={(e) => setSpotName(e.target.value)}
+          placeholder="AI研究室"
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <label>場所・階数</label>
+        <br />
+        <input
+          value={floor}
+          onChange={(e) => setFloor(e.target.value)}
+          placeholder="6F"
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <label>説明文</label>
+        <br />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="研究内容の説明"
+        />
+      </div>
+
+      <br />
+
+      <button onClick={handleCreateSpot}>登録してQR発行</button>
+
+      <hr />
+
+      <h2>登録済みスポット一覧</h2>
+
+      {spots.map((spot) => (
+        <div
+          key={spot.id}
+          style={{
+            border: "1px solid #ccc",
+            padding: "15px",
+            marginBottom: "15px",
+          }}
+        >
+          <h3>{spot.spotName}</h3>
+          <p>場所：{spot.floor}</p>
+          <p>説明：{spot.description}</p>
+          <p>QRコード内容：{spot.qrSecretCode}</p>
+
+          {qrImages[spot.id] && (
+            <img
+              src={qrImages[spot.id]}
+              alt={`${spot.spotName} QRコード`}
+              width={160}
+              height={160}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
