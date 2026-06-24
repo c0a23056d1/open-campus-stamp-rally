@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { prisma } from "@/lib/prisma";
 import { createSymbolWallet } from "@/lib/symbolWallet";
 import { encryptText } from "@/lib/crypto";
+import { issueInitialNftToUser } from "@/lib/nftIssue";
 
 export async function POST(req: Request) {
   try {
@@ -51,6 +52,14 @@ export async function POST(req: Request) {
       },
     });
 
+    let issueResult = null;
+
+    try {
+      issueResult = await issueInitialNftToUser(user.id);
+    } catch (issueError) {
+      console.error("初期NFTオンチェーン付与に失敗:", issueError);
+    }
+
     return NextResponse.json({
       message: "ユーザー登録成功",
       userId: user.id,
@@ -58,6 +67,12 @@ export async function POST(req: Request) {
       email: user.email,
       wallet: user.wallet,
       nft: user.nft,
+      nftIssue: issueResult
+        ? {
+          txHash: issueResult.txHash,
+          alreadyIssued: issueResult.alreadyIssued,
+        }
+        : null,
     });
   } catch (error) {
     console.error(error);
