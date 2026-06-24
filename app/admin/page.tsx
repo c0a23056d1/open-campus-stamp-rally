@@ -42,7 +42,11 @@ export default function AdminPage() {
             QR発行画面
           </button>
         </li>
-        <li>ユーザー管理（未実装）</li>
+        <li>
+          <button onClick={() => router.push("/admin/users")}>
+            ユーザー管理
+          </button>
+        </li>
         <li>スポット分析画面（未実装）</li>
         <li>投票管理画面（未実装）</li>
       </ul>
