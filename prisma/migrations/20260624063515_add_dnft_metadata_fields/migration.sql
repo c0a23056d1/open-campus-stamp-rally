@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "NFT" ADD COLUMN "imageUrl" TEXT;
+ALTER TABLE "NFT" ADD COLUMN "metadataJson" TEXT;
+ALTER TABLE "NFT" ADD COLUMN "metadataTxHash" TEXT;
+ALTER TABLE "NFT" ADD COLUMN "metadataUpdatedAt" DATETIME;
