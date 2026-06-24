@@ -91,6 +91,54 @@ export default function DashboardPage() {
       })
     : null;
 
+  const stampCount = passport.nft?.stampCount ?? 0;
+
+  const passportDesign =
+    stampCount >= 7
+      ? {
+          level: 4,
+          label: "Level 4",
+          title: "Ambassador",
+          borderColor: "#ec4899",
+          backgroundColor: "#fdf2f8",
+          description: "７個以上取得。最大レベルです。",
+        }
+      : stampCount >= 5
+      ? {
+          level: 3,
+          label: "Level 3",
+          title: "Campus Master",
+          borderColor: "#f59e0b",
+          backgroundColor: "#fffbeb",
+          description: "DAO投票提案が可能です。",
+        }
+      : stampCount >= 3  
+      ? {
+          level: 2,
+          label: "Level 2",
+          title: "Research Supprter",
+          borderColor: "#8b5cf6",
+          backgroundColor: "#f5f3ff",
+          description: "DAO投票機能が解放されます。",
+        }
+      : stampCount >= 1
+      ? {
+          level: 1,
+          label: "Level 1",
+          title: "Explorer",
+          borderColor: "#3b82f6",
+          backgroundColor: "#eff6ff",
+          description: "チャット機能が解放されます。",
+        }
+      : {
+          level: 0,
+          label: "Level 0",
+          title: "Fresh Visitor",
+          borderColor: "#d1d5db",
+          backgroundColor: "#f9fafb",
+          description: "まだ探索開始前です。",
+        };
+
   return (
     <div style={{ padding: "20px" }}>
       <div style={{ textAlign: "right" }}>
@@ -107,10 +155,32 @@ export default function DashboardPage() {
       <hr />
 
       <h2>OC Passport</h2>
-      <p>NFT ID：{passport.nft?.nftId}</p>
-      <p>現在のLevel：{passport.nft?.level}</p>
-      <p>称号：{passport.nft?.title}</p>
-      <p>取得スタンプ数：{passport.nft?.stampCount}</p>
+      <div
+        style={{
+          border: `4px solid ${passportDesign.borderColor}`,
+          backgroundColor: passportDesign.backgroundColor,
+          borderRadius: "16px",
+          padding: "20px",
+          maxWidth: "360px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0,1)",
+        }}
+      >
+        <div style={{ textAlign: "center",  fontWeight: "bold" }}>
+          {passportDesign.label}
+        </div>
+
+        <h3 style={{ textAlign: "center" }}>OC Passport</h3>
+        <h4 style={{ textAlign: "center" }}>{passportDesign.title}</h4>
+
+        <p>NFT ID：{passport.nft?.nftId}</p>
+        <p>現在のLevel：{passportDesign.level}</p>
+        <p>称号：{passportDesign.title}</p>
+        <p>取得スタンプ：{stampCount}</p>
+
+        <p style={{ fontSize: "14px" }}>
+          {passportDesign.description}
+        </p>
+      </div>
 
       <hr />
 
