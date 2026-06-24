@@ -48,6 +48,11 @@ model NFT {
   issueTxHash String?
   issueAt DateTime?
 
+  metadataJson String?
+  imageUrl String?
+  metadataTxHash String?
+  metadataUpdatedAt DateTime?
+
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
