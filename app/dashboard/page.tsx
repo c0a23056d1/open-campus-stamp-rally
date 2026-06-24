@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { buildDnftMetadata } from "@/lib/dnftMetadata";
 
 type PassportData = {
   user: {
@@ -78,6 +79,18 @@ export default function DashboardPage() {
     return <div style={{ padding: "20px" }}>読み込み中...</div>;
   }
 
+  const visitedSpots = passport.stamps.map((stamp) => stamp.spotName);
+
+  const dnftMetadata = passport.nft
+    ? buildDnftMetadata({
+        nftId: passport.nft.nftId,
+        level: passport.nft.level,
+        title: passport.nft.title ?? "Fresh Visitor",
+        stampCount: passport.nft.stampCount,
+        visitedSpots,
+      })
+    : null;
+
   return (
     <div style={{ padding: "20px" }}>
       <div style={{ textAlign: "right" }}>
@@ -120,6 +133,26 @@ export default function DashboardPage() {
           ))}
         </ul>
       )}
+
+      <hr />
+
+            <h3>dNFT Metadata preview</h3>
+      {dnftMetadata ? (
+        <pre
+          style={{
+            backgroundColor: "#f5f5f5",
+            padding: "12px",
+            borderRadius: "8px",
+            overflowX: "auto",
+          }}
+        >
+          {JSON.stringify(dnftMetadata, null, 2)}
+          </pre>
+      ) : (
+        <p>Metadataはまだ作成されていません</p>
+      )}
     </div>
   );
 }
+
+
