@@ -3,7 +3,26 @@ Open Campus Stamp Rally/OC Passport
 オープンキャンパス向けのスタンプラリーシステムです。
 ユーザー登録時にsymbolウォレットを自動生成し、NFT情報をDBに作成します。
 管理者が研究室・展示スポット用のQRコードを発行し、ユーザーはQRコードを読み取ってスタンプを取得します。
-取得スタンプ数に応じてNFT(OC Passport)のレベルや称号が変更されます。
+取得スタンプ数に応じてNFT(OC Passport)のレベルや称号が変更され、symbolブロックチェーン上にも反映されます。
+
+## 概要
+本システムでは、オープンキャンパス参加者が研究室や展示スポットを回りながらスタンプを集めることが出来ます。
+参加者ごとにNFTを発行し、訪問状況に応じてレベルアップや称号の変化を行います。
+
+現在は以下の流れが動作します。
+1. ユーザー登録
+2. symbolウォレット自動生成
+3. OC Passport初期作成
+4. 初期NFTオンチェーン付与
+5. ログイン
+6. 管理者がスポットを登録してQRコード発行
+7. ユーザーがQRコードを読み取る
+8. スタンプ取得
+9. StampLog保存
+10. スタンプ数・level・称号更新
+11. dNFT Metadata生成
+12. Symbol Metadata送信
+13. ダッシュボード/管理者画面に反映
 
 使用技術
 ・Next.js
@@ -28,11 +47,17 @@ npm install
 
 4. .envを作成
 プロジェクト直下に.envを作成し以下を記述
-DATABASE_URL="file:./dev.db"
-WALLET_SECRET_KEY="12345678901234567890123456789012"
+DATABASE_URL="file:./dev.db" WALLET_SECRET_KEY="12345678901234567890123456789012" SYMBOL_NETWORK="testnet" 
+SYMBOL_NODE_URL="https://testnet1.symbol-mikun.net:3001" OPERATOR_PRIVATE_KEY="運営ウォレット秘密鍵" 
+INITIAL_NFT_MOSAIC_ID="初期NFT用モザイクID"
 
-WALLET_SECRET_KEYはウォレット秘密鍵の暗号化に使用します・
-開発用では32文字ちょうどの文字列を設定してください
+環境変数の説明
+・DATABASE_URL：Prismaが利用するSQLite DBのパス
+・WALLET_SECRET_KEY：ユーザーの秘密鍵を暗号化してDBに保存するためのキー
+・SYMBOL_NETWORK：symbolのネットワーク名
+・SYMBOL_NODE_URL：接続先のノードURL
+・OPERATOR_PRIVATE_KEY：初期NFT送付やMetadata送信を行う運営ウォレットの秘密鍵
+・INITIAL_NFT_MOSAIC_ID：初期NFTとして配布するsymbolモザイクID
 
 5. Prisma Clientを生成
 npx prisma generate
@@ -56,7 +81,10 @@ http://localhost:3000/register
 ・Wallet
 ・NFT
 
-また、登録時にsymbolウォレットを自動生成し、秘密鍵は暗号化してDBへ保存します。
+また、登録時に以下も実行されます。
+・symbolウォレット自動生成
+・秘密鍵の暗号保存
+・初期NFTのオンチェーン付与
 
 ログイン
 http://localhost:3000/login
@@ -77,13 +105,15 @@ http://localhost:3000/dashboard
 スタンプ取得画面
 http://localhost:3000/scan
 ユーザーがQRコードをカメラで読み取り、スタンプを取得する画面です。
-読み取り成功後、いかが実行されます。
+読み取り成功後、以下が実行されます。
 
 ・Spotの特定
 ・StampLog保存
 ・スタンプ数の再計算
 ・OC PassportのstampCount更新
 ・Level/称号 更新
+・dNFT Metadata生成
+・Symbol Metadata送信
 ・ダッシュボードの反映
 
 管理者トップ画面
@@ -93,7 +123,7 @@ User.isAdmin = true のユーザーのみアクセスできます。
 現時点では以下への導線があります。
 
 ・QRコード発行画面
-・(将来実装予定)ユーザー管理
+・ユーザー管理
 ・(将来実装予定)スポット分析
 ・(将来実装予定)投票管理
 
@@ -106,6 +136,20 @@ http://localhost:3000/admin/spots
 ・場所
 ・説明文
 登録時にqrSecretCodeを生成し、その内容をQRコードとして表示します
+
+ユーザー管理画面
+http://localhost:3000/admin/users
+管理者が登録済みユーザーの状態を確認する画面です。
+現在は以下を確認できます
+
+・ユーザーID/名前/メールアドレス/登録日時
+・symbolウォレットアドレス
+・NFT情報
+・取得済みスタンプ一覧
+
+また管理者画面から以下の操作が可能です。
+・初期NFT再付与
+・Metadata再送信
 
 ## Prisma Studio
 DBの中身を確認したいときは以下を実行します
@@ -127,6 +171,7 @@ Wallet/Passport(NFT)初期化
 ・symbolウォレットの自動生成
 ・秘密鍵の暗号化保存
 ・初期NFTデータ(OC Passport)のBD作成
+・初期NFTのオンチェーン付与
 
 管理者機能
 http://localhost:3000/admin
@@ -134,6 +179,9 @@ http://localhost:3000/admin
 ・Spot登録
 ・QRシークレットコード生成
 ・QRコード発行/表示
+・ユーザー管理画面
+・初期NFT再付与
+・Metadata再送信
 
 スタンプラリー機能
 ・QRコード読み取り(カメラ)
@@ -154,6 +202,12 @@ http://localhost:3000/admin
 ・5個→Level 3 / Campus Member
 ・7個以上→Level 4 / Campus Ambassador
 
+dNFT/Symbol連携
+・dNFT Metadata生成
+・NFTテーブルへのMetadata保存
+・symbolMetadata送信
+・管理者画面からMetadata再送信
+
 ## データモデル概要
 主に以下のテーブルを利用しています。
 ・User：ユーザー情報、ログイン情報、管理者フラグ
@@ -173,6 +227,9 @@ http://localhost:3000/admin
 ・GET /api/admin/chack：管理者権限確認
 ・GET /api/admin/spots：登録済みSpot一覧表示
 ・POST /api/admin/spots：QR発行
+・GET /api/admin/users：ユーザー一覧取得
+・POST /api/admin/users/reissue：初期NFT再付与
+・POST /api/admin/users/resend-metadata：Metadata再送信
 
 スタンプ系
 ・POST /api/stamp/scan：QRコード読み取り結果を受け取り、スタンプ取得処理を実行
@@ -224,4 +281,9 @@ develop
 8. StampLog保存
 9. スタンプ数・level・称号変更
 10. ダッシュボードに反映
+11. dNFT Metadata生成
+12. Symbol Metadata送信
+13. 管理者画面でユーザー状況確認
+14. 管理者画面から初期NFT再付与 / Metadata再送信
+
 
