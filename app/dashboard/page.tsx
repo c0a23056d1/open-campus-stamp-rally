@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildDnftMetadata } from "@/lib/dnftMetadata";
+import { PassportMap } from "@/components/PassportMap";
 
 type PassportData = {
   user: {
@@ -22,6 +23,10 @@ type PassportData = {
   stamps: {
     id: number;
     visitedAt: string;
+    spotName: string;
+    floor: string;
+  }[];
+  spots: {
     spotName: string;
     floor: string;
   }[];
@@ -171,6 +176,12 @@ export default function DashboardPage() {
 
         <h3 style={{ textAlign: "center" }}>OC Passport</h3>
         <h4 style={{ textAlign: "center" }}>{passportDesign.title}</h4>
+        
+        <PassportMap
+        spots={passport.spots}
+        visitedSpots={visitedSpots}
+        level={passportDesign.level}
+        />
 
         <p>NFT ID：{passport.nft?.nftId}</p>
         <p>現在のLevel：{passportDesign.level}</p>
@@ -204,6 +215,8 @@ export default function DashboardPage() {
         </ul>
       )}
 
+      <hr />
+      
       <hr />
 
             <h3>dNFT Metadata preview</h3>
