@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildDnftMetadata } from "@/lib/dnftMetadata";
+import { PassportMap } from "@/components/PassportMap";
 
 type PassportData = {
   user: {
@@ -22,6 +23,10 @@ type PassportData = {
   stamps: {
     id: number;
     visitedAt: string;
+    spotName: string;
+    floor: string;
+  }[];
+  spots: {
     spotName: string;
     floor: string;
   }[];
@@ -203,6 +208,15 @@ export default function DashboardPage() {
           ))}
         </ul>
       )}
+
+      <hr />
+      
+      <PassportMap
+        spots={passport.spots}
+        visitedSpots={visitedSpots}
+        level={passportDesign.level}
+      />
+
 
       <hr />
 
