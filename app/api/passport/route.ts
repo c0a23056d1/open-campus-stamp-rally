@@ -26,6 +26,13 @@ export async function GET(req: Request) {
       },
     });
 
+    const spots = await prisma.spot.findMany({
+      orderBy: [
+        { floor: "desc" },
+        { spotName: "asc" },
+      ],
+    });
+
     if (!user) {
       return NextResponse.json(
         { message: "ユーザーが見つかりません" },
@@ -46,6 +53,10 @@ export async function GET(req: Request) {
         visitedAt: log.visitedAt,
         spotName: log.spot.spotName,
         floor: log.spot.floor,
+      })),
+      spots: spots.map((spot) => ({
+        spotName: spot.spotName,
+        floor: spot.floor,
       })),
     });
   } catch (error) {
