@@ -202,6 +202,10 @@ export default function DashboardPage() {
         スタンプ取得画面へ
       </button>
 
+      <button onClick={() => router.push("/proposals")}>
+        DAO投票画面へ
+      </button>
+
       <h2>取得スタンプ</h2>
       {passport.stamps.length === 0 ? (
         <p>まだスタンプを取得していません</p>

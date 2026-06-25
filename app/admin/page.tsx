@@ -48,7 +48,11 @@ export default function AdminPage() {
           </button>
         </li>
         <li>スポット分析画面（未実装）</li>
-        <li>投票管理画面（未実装）</li>
+        <li>
+          <button onClick={() => router.push("/admin/proposals")}>
+            提案管理
+          </button>
+        </li>
       </ul>
     </div>
   );
