@@ -62,6 +62,58 @@ export default function AdminUsersPage() {
     useEffect(() => {
         fetchUsers();
     }, []);
+
+    const handleReissueNft = async (targetUserId: number) => {
+        const adminUserId = localStorage.getItem("userId");
+
+        const ok = confirm("このユーザーに初期NFTを再付与しますか？");
+        if (!ok) return;
+
+        const res = await fetch("/api/admin/users/reissue", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                adminUserId,
+                targetUserId,
+            }),
+        });
+
+        const data = await res.json();
+        alert(data.message);
+
+        if (res.ok) {
+            fetchUsers();
+        }
+    };
+
+    const handleResendMetadata = async ( targetUserId: number) => {
+        const adminUserId = localStorage.getItem("userId");
+
+        const ok = confirm("このユーザーのMetadataを再送信しますか？");
+        if (!ok) return;
+
+        const res = await fetch("/api/admin/users/resend-metadata", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                adminUserId,
+                targetUserId,
+            }),
+        });
+
+        const data = await res.json();
+        alert(data.message);
+        
+        if (res.ok) {
+            fetchUsers();
+        }
+    };
+
+
     if (loading) {
         return <div style={{ padding: "20px" }}>読み込み中</div>;
     }
@@ -124,6 +176,18 @@ export default function AdminUsersPage() {
                                     ? new Date(user.nft.metadataUpdatedAt).toLocaleString()
                                     : "未登録"}
                             </p>
+                            <div style={{ marginTop: "10px" }}>
+                                <button onClick={() => handleReissueNft(user.id)}>
+                                    初期NFT再付与
+                                </button>
+
+                                <button
+                                    onClick={() => handleResendMetadata(user.id)}
+                                    style={{ marginLeft: "10px" }}
+                                >
+                                    Metadata再送信
+                                </button>
+                            </div>
                         </>
                     ) : (
                         <p>NFT情報がありません</p>
