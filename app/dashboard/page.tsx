@@ -176,6 +176,12 @@ export default function DashboardPage() {
 
         <h3 style={{ textAlign: "center" }}>OC Passport</h3>
         <h4 style={{ textAlign: "center" }}>{passportDesign.title}</h4>
+        
+        <PassportMap
+        spots={passport.spots}
+        visitedSpots={visitedSpots}
+        level={passportDesign.level}
+        />
 
         <p>NFT ID：{passport.nft?.nftId}</p>
         <p>現在のLevel：{passportDesign.level}</p>
@@ -211,13 +217,6 @@ export default function DashboardPage() {
 
       <hr />
       
-      <PassportMap
-        spots={passport.spots}
-        visitedSpots={visitedSpots}
-        level={passportDesign.level}
-      />
-
-
       <hr />
 
             <h3>dNFT Metadata preview</h3>

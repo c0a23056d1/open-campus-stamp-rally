@@ -9,6 +9,19 @@ type PassportMapProps = {
     level: number;
 };
 
+const spotLayouts = [
+    { spotName: "研究室G", floor: "8F", x: 90, y: 45},
+    { spotName: "研究室H", floor: "8F", x: 160, y: 45},
+
+    { spotName: "研究室B", floor: "7F", x: 90, y: 95},
+    { spotName: "研究室C", floor: "7F", x: 160, y: 95},
+    { spotName: "研究室D", floor: "7F", x: 230, y: 95},
+
+    { spotName: "研究室A", floor: "6F", x: 90, y: 145},
+    { spotName: "研究室E", floor: "6F", x: 160, y: 145},
+    { spotName: "研究室F", floor: "6F", x: 230, y: 145},
+];
+
 function getSpotColor(isVisited: boolean, level: number) {
     if (!isVisited)return "#e5e7eb";
 
@@ -21,76 +34,66 @@ function getSpotColor(isVisited: boolean, level: number) {
 }
 
 export function PassportMap({ spots,visitedSpots, level }: PassportMapProps) {
-    const floors = Array.from(new Set(spots.map((spot) => spot.floor))).sort(
-        (a, b) => Number(b.replace("F", "")) - Number(a.replace("F", ""))
+    const existingSpotNames = spots.map((spot) => spot.spotName);
+
+    const visibleLayouts = spotLayouts.filter((layout) =>
+        existingSpotNames.includes(layout.spotName)
     );
 
     return (
-        <div>
-            <h2>研究室マップ</h2>
-            <p>現在のレベル：{level}</p>
-            <p>訪問済みスポット数：{visitedSpots.length}</p>
+        <svg
+            width="300"
+            height="190"
+            viewBox="0 0 300 190"
+            style={{
+                border: "1px solid #cbd5e1",
+                borderRadius: "12px",
+                backgroundColor: "#ffffff",
+            }}
+        >
+            <text x="12" y="26" fontSize="13" fontWeight="bold">
+                8F
+            </text>
+            <text x="12" y="76" fontSize="13" fontWeight="bold">
+                7F
+            </text>
+            <text x="12" y="126" fontSize="13" fontWeight="bold">
+                6F
+            </text>
 
-            <div
-                style={{
-                    border: "2px solid #d1d5db",
-                    borderRadius: "16px",
-                    padding: "16px",
-                    maxWidth: "360px",
-                    backgroundColor: "#ffffff",
-                }}
-            >
-                {floors.map((floor) => (
-                    <div
-                        key={floor}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            marginBottom: "10px",
-                        }}
-                    >
-                        <strong style={{ width: "36px"}}>{floor}</strong>
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(3, 48px)",
-                                gap: "8px",
-                            }}
-                        >
-                        {spots
-                            .filter((spot) => spot.floor === floor)
-                            .map((spot) => {
-                                const isVisited = visitedSpots.includes(spot.spotName);
+            {visibleLayouts.map((spot) => {
+                const isVisited = visitedSpots.includes(spot.spotName);
+                const color = getSpotColor(isVisited, level);
 
-                                return (
-                                    <div
-                                        key={spot.spotName}
-                                        title={spot.spotName}
-                                        style={{
-                                            width: "48px",
-                                            height: "28px",
-                                            borderRadius: "6px",
-                                            border:"1px solid #cbd5e1",
-                                            backgroundColor: isVisited
-                                                ? getSpotColor(true, level)
-                                                : "#f3f4f6",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            fontSize: "14px",
-                                            color: isVisited ? "#ffffff" : "#9ca3af",
-                                            fontWeight: "bold",
-                                        }}
-                                    >
-                                        {isVisited ? "📍" : ""}
-                                    </div>  
-                                );
-                        })}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
+                return (
+                    <g key={spot.spotName}>
+                        <title>{spot.spotName}</title>
+                        
+                        <rect
+                            x={spot.x}
+                            y={spot.y}
+                            width="48"
+                            height="28"
+                            rx="6"
+                            fill={isVisited ? color : "#f3f4f6"}
+                            stroke="#cbd5e1"
+                            strokeWidth="1"                        
+                        />
+
+                        {isVisited && (
+                            <text
+                                x={spot.x + 24}
+                                y={spot.y + 19}
+                                textAnchor="middle"
+                                fontSize="13"
+                                fill="#ffffff"
+                            >
+                                📍   
+                            </text>
+                        )}
+                    </g>
+                );
+            })}
+        </svg>
     );
 }
