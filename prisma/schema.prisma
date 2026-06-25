@@ -110,19 +110,33 @@ model Proposal {
   startAt       DateTime
   endAt         DateTime
   createdAt     DateTime @default(now())
-
+  
+  options ProposalOption[]
   votes Vote[]
 }
 
-model Vote {
+model ProposalOption {
   id         Int      @id @default(autoincrement())
   proposalId Int
-  userId     Int
-  choice     String
-  votedAt    DateTime @default(now())
+  label      String
+  sortOrder  Int      @default(0)
 
-  proposal Proposal @relation(fields: [proposalId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  votes    Vote[]
+
+  @@index([proposalId])
+}
+
+model Vote {
+  id               Int      @id @default(autoincrement())
+  proposalId       Int
+  proposalOptionId Int
+  userId           Int
+  votedAt          DateTime @default(now())
+
+  proposal Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  option   ProposalOption @relation(fields: [proposalOptionId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id])
 
   @@unique([proposalId, userId])
 }
