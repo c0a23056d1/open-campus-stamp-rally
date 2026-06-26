@@ -1,12 +1,14 @@
 type Spot = {
     spotName: string;
     floor: string;
-}
+};
 
 type PassportMapProps = {
     spots: Spot[];
     visitedSpots: string[];
     level: number;
+    x?: number;
+    y?: number;
 };
 
 const spotLayouts = [
@@ -33,7 +35,13 @@ function getSpotColor(isVisited: boolean, level: number) {
     return "#9ca3af";
 }
 
-export function PassportMap({ spots,visitedSpots, level }: PassportMapProps) {
+export function PassportMap({
+    spots,
+    visitedSpots,
+    level,
+    x = 0,
+    y= 0,
+}: PassportMapProps) {
     const existingSpotNames = spots.map((spot) => spot.spotName);
 
     const visibleLayouts = spotLayouts.filter((layout) =>
@@ -41,16 +49,17 @@ export function PassportMap({ spots,visitedSpots, level }: PassportMapProps) {
     );
 
     return (
-        <svg
-            width="300"
-            height="190"
-            viewBox="0 0 300 190"
-            style={{
-                border: "1px solid #cbd5e1",
-                borderRadius: "12px",
-                backgroundColor: "#ffffff",
-            }}
-        >
+        <g transform={'translate(${x}, ${y})'}>
+            <rect
+                x="0"
+                y="0"
+                width="300"
+                height="190"
+                rx="12"
+                fill="#ffffff"
+                stroke="#cbd5e1"
+            />
+
             <text x="12" y="26" fontSize="13" fontWeight="bold">
                 8F
             </text>
@@ -94,6 +103,6 @@ export function PassportMap({ spots,visitedSpots, level }: PassportMapProps) {
                     </g>
                 );
             })}
-        </svg>
+        </g>
     );
 }

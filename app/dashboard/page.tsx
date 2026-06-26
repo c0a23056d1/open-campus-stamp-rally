@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildDnftMetadata } from "@/lib/dnftMetadata";
 import { PassportMap } from "@/components/PassportMap";
+import { PassportCardSvg } from "@/lib/dnft/passportCardSvg";
 
 type PassportData = {
   user: {
@@ -238,6 +239,17 @@ export default function DashboardPage() {
       ) : (
         <p>Metadataはまだ作成されていません</p>
       )}
+
+      <hr />
+
+      <h2>SVG版 OC Passport</h2>
+      <PassportCardSvg
+        level={passportDesign.level}
+        title={passportDesign.title}
+        stampCount={stampCount}
+        spots={passport.spots}
+        visitedSpots={visitedSpots}
+      />
     </div>
   );
 }
