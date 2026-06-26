@@ -202,8 +202,14 @@ export default function DashboardPage() {
         スタンプ取得画面へ
       </button>
 
+      <br />
       <button onClick={() => router.push("/proposals")}>
         DAO投票画面へ
+      </button>
+
+      <br />
+      <button onClick={() => router.push("/chat")}>
+        チャット画面へ
       </button>
 
       <h2>取得スタンプ</h2>
