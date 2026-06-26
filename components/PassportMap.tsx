@@ -12,16 +12,16 @@ type PassportMapProps = {
 };
 
 const spotLayouts = [
-    { spotName: "研究室G", floor: "8F", x: 90, y: 45},
-    { spotName: "研究室H", floor: "8F", x: 160, y: 45},
+    { spotName: "研究室G", floor: "8F", x: 70, y: 45},
+    { spotName: "研究室H", floor: "8F", x: 130, y: 45},
 
-    { spotName: "研究室B", floor: "7F", x: 90, y: 95},
-    { spotName: "研究室C", floor: "7F", x: 160, y: 95},
-    { spotName: "研究室D", floor: "7F", x: 230, y: 95},
+    { spotName: "研究室B", floor: "7F", x: 70, y: 95},
+    { spotName: "研究室C", floor: "7F", x: 130, y: 95},
+    { spotName: "研究室D", floor: "7F", x: 190, y: 95},
 
-    { spotName: "研究室A", floor: "6F", x: 90, y: 145},
-    { spotName: "研究室E", floor: "6F", x: 160, y: 145},
-    { spotName: "研究室F", floor: "6F", x: 230, y: 145},
+    { spotName: "研究室A", floor: "6F", x: 70, y: 145},
+    { spotName: "研究室E", floor: "6F", x: 130, y: 145},
+    { spotName: "研究室F", floor: "6F", x: 190, y: 145},
 ];
 
 function getSpotColor(isVisited: boolean, level: number) {
@@ -50,23 +50,14 @@ export function PassportMap({
 
     return (
         <g transform={'translate(${x}, ${y})'}>
-            <rect
-                x="0"
-                y="0"
-                width="300"
-                height="190"
-                rx="12"
-                fill="#ffffff"
-                stroke="#cbd5e1"
-            />
 
-            <text x="12" y="26" fontSize="13" fontWeight="bold">
+            <text x="20" y="63" fontSize="13" fontWeight="bold">
                 8F
             </text>
-            <text x="12" y="76" fontSize="13" fontWeight="bold">
+            <text x="20" y="113" fontSize="13" fontWeight="bold">
                 7F
             </text>
-            <text x="12" y="126" fontSize="13" fontWeight="bold">
+            <text x="20" y="163" fontSize="13" fontWeight="bold">
                 6F
             </text>
 

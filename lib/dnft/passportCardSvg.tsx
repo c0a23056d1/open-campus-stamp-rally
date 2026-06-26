@@ -27,6 +27,8 @@ export function PassportCardSvg({
     level,
     title,
     stampCount,
+    spots,
+    visitedSpots,
 }: PassportCardSvgProps) {
     const levelColor = getLevelColor(level);
 
@@ -35,7 +37,7 @@ export function PassportCardSvg({
             width="320"
             height="460"
             viewBox="0 0 320 460"
-            xmlns="https://www.w3.org/2000/svg"
+            xmlns="http://www.w3.org/2000/svg"
             >
                 <rect
                     x="10"
@@ -80,28 +82,18 @@ export function PassportCardSvg({
                     Level {level}
                 </text>
 
-                <rect
-                    x="45"
-                    y="140"
-                    width="230"
-                    height="210"
-                    rx="12"
-                    fill="#f9fafb"
-                    stroke="#d1d5db"
-                />
+                <g transform="translate(25, 140) scale(0.8)">
+                    <PassportMap
+                        spots={spots}
+                        visitedSpots={visitedSpots}
+                        level={level}
+                        x={0}
+                        y={0}
+                    />
+                </g>
                 <text
                     x="160"
-                    y="245"
-                    textAnchor="middle"
-                    fontSize="14"
-                    fill="#6b7280"
-                >
-                    ここに研究室マップを描画
-                </text>
-
-                <text
-                    x="160"
-                    y="390"
+                    y="370"
                     textAnchor="middle"
                     fontSize="18"
                     fontWeight="bold"
