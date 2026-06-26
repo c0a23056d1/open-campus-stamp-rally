@@ -1,42 +1,38 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+async function checkAdmin(userId: number) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  return !!user?.isAdmin;
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const userId = Number(searchParams.get("userId"));
+    const adminUserId = Number(searchParams.get("adminUserId"));
     const roomId = Number(searchParams.get("roomId"));
 
-    if (!userId || !roomId) {
+    if (!adminUserId || !roomId) {
       return NextResponse.json(
-        { message: "userIdとroomIdが必要です" },
+        { message: "adminUserIdとroomIdが必要です" },
         { status: 400 }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        nft: true,
-      },
-    });
-
-    if (!user || !user.nft) {
+    if (!(await checkAdmin(adminUserId))) {
       return NextResponse.json(
-        { message: "ユーザー情報が見つかりません" },
-        { status: 404 }
-      );
-    }
-
-    if (user.nft.level < 1 && !user.isAdmin) {
-      return NextResponse.json(
-        { message: "チャットはLevel 1以上で利用できます" },
+        { message: "管理者権限がありません" },
         { status: 403 }
       );
     }
 
     const room = await prisma.chatRoom.findUnique({
-      where: { id: roomId },
+      where: {
+        id: roomId,
+      },
     });
 
     if (!room) {
@@ -49,16 +45,16 @@ export async function GET(req: Request) {
     const messages = await prisma.chatMessage.findMany({
       where: {
         roomId,
-        isDeleted: false,
       },
       orderBy: {
-        createdAt: "asc",
+        createdAt: "desc",
       },
       include: {
         user: {
           select: {
             id: true,
             name: true,
+            email: true,
           },
         },
       },
@@ -71,97 +67,60 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { message: "チャット取得に失敗しました" },
+      { message: "メッセージ一覧取得に失敗しました" },
       { status: 500 }
     );
   }
 }
 
-export async function POST(req: Request) {
+export async function PATCH(req: Request) {
   try {
-    const { userId, roomId, messageText } = await req.json();
+    const { adminUserId, messageId } = await req.json();
 
-    if (!userId || !roomId || !messageText) {
+    if (!adminUserId || !messageId) {
       return NextResponse.json(
-        { message: "userId、roomId、messageTextが必要です" },
+        { message: "adminUserIdとmessageIdが必要です" },
         { status: 400 }
       );
     }
 
-    const userIdNumber = Number(userId);
-    const roomIdNumber = Number(roomId);
-    const trimmedMessage = String(messageText).trim();
-
-    if (!trimmedMessage) {
+    if (!(await checkAdmin(Number(adminUserId)))) {
       return NextResponse.json(
-        { message: "メッセージを入力してください" },
-        { status: 400 }
-      );
-    }
-
-    if (trimmedMessage.length > 300) {
-      return NextResponse.json(
-        { message: "メッセージは300文字以内にしてください" },
-        { status: 400 }
-      );
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: userIdNumber },
-      include: {
-        nft: true,
-      },
-    });
-
-    if (!user || !user.nft) {
-      return NextResponse.json(
-        { message: "ユーザー情報が見つかりません" },
-        { status: 404 }
-      );
-    }
-
-    if (user.nft.level < 1 && !user.isAdmin) {
-      return NextResponse.json(
-        { message: "チャット投稿はLevel 1以上で利用できます" },
+        { message: "管理者権限がありません" },
         { status: 403 }
       );
     }
 
-    const room = await prisma.chatRoom.findUnique({
-      where: { id: roomIdNumber },
+    const message = await prisma.chatMessage.findUnique({
+      where: {
+        id: Number(messageId),
+      },
     });
 
-    if (!room) {
+    if (!message) {
       return NextResponse.json(
-        { message: "チャットルームが見つかりません" },
+        { message: "メッセージが見つかりません" },
         { status: 404 }
       );
     }
 
-    const created = await prisma.chatMessage.create({
-      data: {
-        roomId: roomIdNumber,
-        userId: userIdNumber,
-        messageText: trimmedMessage,
+    const updatedMessage = await prisma.chatMessage.update({
+      where: {
+        id: Number(messageId),
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+      data: {
+        isDeleted: true,
       },
     });
 
     return NextResponse.json({
-      message: "投稿しました",
-      chatMessage: created,
+      message: "メッセージを削除しました",
+      chatMessage: updatedMessage,
     });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { message: "チャット投稿に失敗しました" },
+      { message: "メッセージ削除に失敗しました" },
       { status: 500 }
     );
   }

@@ -141,6 +141,10 @@ export default function AdminChatPage() {
             <p>{room.description || "説明なし"}</p>
             <p>作成日：{new Date(room.createdAt).toLocaleString()}</p>
             <p>メッセージ数：{room.messages.length}</p>
+
+            <button onClick={() => router.push(`/admin/chat/${room.id}`)}>
+              メッセージ管理
+            </button>
           </div>
         ))
       )}
