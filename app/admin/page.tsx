@@ -53,6 +53,11 @@ export default function AdminPage() {
             提案管理
           </button>
         </li>
+        <li>
+          <button onClick={() => router.push("/admin/chat")}>
+            チャット管理
+          </button>
+        </li>
       </ul>
     </div>
   );
