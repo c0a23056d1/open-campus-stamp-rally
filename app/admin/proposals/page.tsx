@@ -24,6 +24,10 @@ type Proposal = {
   votes: {
     id: number;
   }[];
+  chatRoom: {
+    id: number;
+    roomName: string;
+  } | null;
 };
 
 export default function AdminProposalsPage() {
@@ -227,6 +231,12 @@ export default function AdminProposalsPage() {
                 </li>
               ))}
             </ul>
+
+            {proposal.chatRoom && (
+              <button onClick={() => router.push(`/admin/chat/${proposal.chatRoom!.id}`)}>
+                議論ルームを管理
+              </button>
+            )}
           </div>
         ))
       )}

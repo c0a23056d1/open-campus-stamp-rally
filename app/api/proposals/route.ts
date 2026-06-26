@@ -32,6 +32,7 @@ export async function GET(req: Request) {
       createdAt: "desc",
     },
     include: {
+      chatRoom: true,
       options: {
         orderBy: {
           sortOrder: "asc",
