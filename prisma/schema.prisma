@@ -23,6 +23,8 @@ model User {
   stampLogs    StampLog[]
   messages     ChatMessage[]
   votes        Vote[]
+
+  createdProposals Proposal[] @relation("ProposalCreator")
 }
 
 model Wallet {
@@ -111,6 +113,10 @@ model Proposal {
   startAt       DateTime
   endAt         DateTime
   createdAt     DateTime @default(now())
+
+  status        String   @default("approved")
+  creatorUserId Int?
+  creator       User?    @relation("ProposalCreator", fields: [creatorUserId], references: [id])
 
   chatRoomId    Int?
   chatRoom      ChatRoom?        @relation(fields: [chatRoomId], references: [id])
