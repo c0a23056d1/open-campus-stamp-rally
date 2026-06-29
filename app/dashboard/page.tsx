@@ -19,6 +19,7 @@ type PassportData = {
     title: string | null;
     stampCount: number;
     nftId: string;
+    imageUrl: string | null;
   } | null;
   stamps: {
     id: number;
@@ -93,6 +94,7 @@ export default function DashboardPage() {
         title: passport.nft.title ?? "Fresh Visitor",
         stampCount: passport.nft.stampCount,
         visitedSpots,
+        imageUrl: passport.nft.imageUrl ?? undefined,
       })
     : null;
 
