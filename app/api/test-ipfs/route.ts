@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generatePassportPng } from "@/lib/dnft/generatePassportPng";
 import { uploadPngToPinata } from "@/lib/ipfs/uploadToPinata";
+import { buildDnftMetadata } from "@/lib/dnftMetadata";
 
 export async function GET() {
     const pngBuffer = await generatePassportPng({
@@ -25,10 +26,17 @@ export async function GET() {
         `oc-passport-test-${Date.now()}.png`
     );
 
-    return NextResponse.json({
-        message: "IPFSアップロード成功",
-        cid,
+    const metadata = buildDnftMetadata({
+        nftId: "OC_PASS_TEST",
+        level: 4,
+        title: "Ambassador",
+        stampCount: 8,
+        visitedSpots: ["研究室A", "研究室B", "研究室G"],
         imageUrl: `ipfs://${cid}`,
-        gatewayUrl: `https://gateway.pinata.cloud/ipfs/${cid}`,
+    });
+
+    return NextResponse.json({
+        cid,
+        metadata,
     });
 }
