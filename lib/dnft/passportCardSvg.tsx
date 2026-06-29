@@ -1,4 +1,5 @@
 import { PassportMap } from "@/components/PassportMap";
+import { PassportFrame } from "./PassportFrame";
 
 type Spot = {
     spotName: string;
@@ -23,6 +24,8 @@ function getLevelColor(level: number) {
     return "#9ca3af";
 }
 
+
+
 export function PassportCardSvg({
     level,
     title,
@@ -39,16 +42,7 @@ export function PassportCardSvg({
             viewBox="0 0 320 460"
             xmlns="http://www.w3.org/2000/svg"
             >
-                <rect
-                    x="10"
-                    y="10"
-                    width="300"
-                    height="400"
-                    rx="18"
-                    fill="#ffffff"
-                    stroke={levelColor}
-                    strokeWidth="5"
-                />
+                <PassportFrame level={level}/>
 
                 <text
                     x="160"

@@ -100,6 +100,13 @@ export default function DashboardPage() {
 
   const stampCount = passport.nft?.stampCount ?? 0;
 
+  const dnftImageUrl = passport.nft?.imageUrl
+      ? passport.nft.imageUrl.replace(
+        "ipfs://",
+        "https://gateway.pinata.cloud/ipfs/"
+      )
+      :null;
+
   const passportDesign =
     stampCount >= 7
       ? {
@@ -179,6 +186,19 @@ export default function DashboardPage() {
         <h3 style={{ textAlign: "center" }}>OC Passport</h3>
         <h4 style={{ textAlign: "center" }}>{passportDesign.title}</h4>
         
+        {dnftImageUrl && (
+          <div style={{ textAlign: "center", margin: "16px 0" }}>
+            <img
+              src={dnftImageUrl}
+              alt="dNFT Passport"
+              style={{ 
+                width: "220px",
+                borderRadius: "12px",
+                border: `2px solid ${passportDesign.borderColor}`,
+              }}
+            />
+          </div>
+        )}
 
         <p>NFT ID：{passport.nft?.nftId}</p>
         <p>現在のLevel：{passportDesign.level}</p>
@@ -220,32 +240,18 @@ export default function DashboardPage() {
       
       <hr />
 
-            <h3>dNFT Metadata preview</h3>
-      {dnftMetadata ? (
-        <pre
-          style={{
-            backgroundColor: "#f5f5f5",
-            padding: "12px",
-            borderRadius: "8px",
-            overflowX: "auto",
-          }}
-        >
-          {JSON.stringify(dnftMetadata, null, 2)}
-          </pre>
-      ) : (
-        <p>Metadataはまだ作成されていません</p>
-      )}
+      
 
       <hr />
 
-      <h2>SVG版 OC Passport</h2>
+      {/* <h2>SVG版 OC Passport</h2>
       <PassportCardSvg
         level={passportDesign.level}
         title={passportDesign.title}
         stampCount={stampCount}
         spots={passport.spots}
         visitedSpots={visitedSpots}
-      />
+      />  */}
     </div>
   );
 }
