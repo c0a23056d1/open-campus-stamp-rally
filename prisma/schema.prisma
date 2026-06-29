@@ -120,6 +120,9 @@ model Proposal {
 
   chatRoomId    Int?
   chatRoom      ChatRoom?        @relation(fields: [chatRoomId], references: [id])
+
+  approveTxHash String?
+  approvedAt    DateTime?
   
   options ProposalOption[]
   votes Vote[]
@@ -143,6 +146,9 @@ model Vote {
   proposalOptionId Int
   userId           Int
   votedAt          DateTime @default(now())
+
+  voteTxHash       String?
+  recordedAt       DateTime?
 
   proposal Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   option   ProposalOption @relation(fields: [proposalOptionId], references: [id], onDelete: Cascade)
