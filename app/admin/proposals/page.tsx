@@ -20,14 +20,27 @@ type Proposal = {
   startAt: string;
   endAt: string;
   createdAt: string;
-  options: ProposalOption[];
-  votes: {
+  status: string;
+  creator: {
     id: number;
-  }[];
+    name: string | null;
+    email: string;
+  } | null;
   chatRoom: {
     id: number;
     roomName: string;
   } | null;
+  options: {
+    id: number;
+    label: string;
+    sortOrder: number;
+    votes: {
+      id: number;
+    }[];
+  }[];
+  votes: {
+    id: number;
+  }[];
 };
 
 export default function AdminProposalsPage() {
@@ -104,6 +117,31 @@ export default function AdminProposalsPage() {
       fetchProposals();
     }
   };
+
+  const handleApproveProposal = async (proposalId: number) => {
+    const adminUserId = localStorage.getItem("userId");
+
+    const ok = confirm("このProposalを承認しますか？");
+    if (!ok) return;
+
+    const res = await fetch("/api/admin/proposals/approve", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        adminUserId,
+        proposalId,
+      }),
+    });
+
+    const data = await res.json();
+    alert(data.message);
+
+    if (res.ok) {
+      fetchProposals();
+    }
+  }
 
   return (
     <div style={{ padding: "20px" }}>
@@ -231,6 +269,26 @@ export default function AdminProposalsPage() {
                 </li>
               ))}
             </ul>
+            <hr />
+            <p>
+              <strong>状態：</strong>
+              {proposal.status === "pending" ? "🟡 承認待ち" : "🟢 承認済み"}
+            </p>
+            <p>
+              <strong>作成者：</strong>
+              {proposal.creator
+                ? `${proposal.creator.name || proposal.creator.email}`
+                : "不明"}
+            </p>
+
+            {proposal.status === "pending" && (
+              <button 
+                 onClick={() => handleApproveProposal(proposal.id)}
+                 style={{ marginRight: "10px" }}
+              >
+                承認
+              </button>
+            )}
 
             {proposal.chatRoom && (
               <button onClick={() => router.push(`/admin/chat/${proposal.chatRoom!.id}`)}>

@@ -58,6 +58,7 @@ export async function POST(req:Request) {
                 startAt: new Date(startAt),
                 endAt: new Date(endAt),
                 creatorUserId: Number(userId),
+                status: "pending",
                 options: {
                     create: optionLabels.map((label, index) => ({
                         label,
