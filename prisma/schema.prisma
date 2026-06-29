@@ -147,6 +147,9 @@ model Vote {
   userId           Int
   votedAt          DateTime @default(now())
 
+  voteTxHash       String?
+  recordedAt       DateTime?
+
   proposal Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   option   ProposalOption @relation(fields: [proposalOptionId], references: [id], onDelete: Cascade)
   user     User           @relation(fields: [userId], references: [id])
