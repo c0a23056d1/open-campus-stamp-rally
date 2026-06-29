@@ -122,6 +122,13 @@ export default function ProposalsPage() {
       <p>あなたのLevel：{userLevel}</p>
 
       <hr />
+      {userLevel >= 3 && (
+        <button onClick={() => router.push("/proposals/request")}>
+          Proposalを提案する
+        </button>
+      )}
+
+      <hr />
 
       {proposals.length === 0 ? (
         <p>投票はまだありません</p>

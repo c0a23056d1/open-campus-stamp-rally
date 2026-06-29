@@ -32,6 +32,13 @@ export async function GET(req: Request) {
       createdAt: "desc",
     },
     include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       chatRoom: true,
       options: {
         orderBy: {
@@ -42,7 +49,7 @@ export async function GET(req: Request) {
         },
       },
       votes: true,
-    },
+    }
   });
 
   return NextResponse.json({ proposals });
