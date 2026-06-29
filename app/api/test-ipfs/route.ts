@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generatePassportPng } from "@/lib/dnft/generatePassportPng";
 import { uploadPngToPinata } from "@/lib/ipfs/uploadToPinata";
 import { buildDnftMetadata } from "@/lib/dnftMetadata";
+import { sendDnftMetadata } from "@/lib/symbolMetadata";
 
 export async function GET() {
     const pngBuffer = await generatePassportPng({
@@ -35,8 +36,18 @@ export async function GET() {
         imageUrl: `ipfs://${cid}`,
     });
 
+    const metadataJson = JSON.stringify(metadata);
+
+    const symbolResult = await sendDnftMetadata({
+        recipientAddress: "TDK2SJQMIFNOWFOHKK6BBOWILCVMZYEHNX2YIUQ",
+        metadataJson,
+    })
+
     return NextResponse.json({
+        message: "IPFSアップロードとsymbol Metadata更新に成功",
         cid,
+        imageUrl: `ipfs://${cid}`,
         metadata,
+        symbolTxHash: symbolResult.txHash,
     });
 }
