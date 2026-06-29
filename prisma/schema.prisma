@@ -23,6 +23,8 @@ model User {
   stampLogs    StampLog[]
   messages     ChatMessage[]
   votes        Vote[]
+
+  createdProposals Proposal[] @relation("ProposalCreator")
 }
 
 model Wallet {
@@ -88,6 +90,7 @@ model ChatRoom {
   createdAt   DateTime @default(now())
 
   messages ChatMessage[]
+  proposals Proposal[]
 }
 
 model ChatMessage {
@@ -110,6 +113,16 @@ model Proposal {
   startAt       DateTime
   endAt         DateTime
   createdAt     DateTime @default(now())
+
+  status        String   @default("approved")
+  creatorUserId Int?
+  creator       User?    @relation("ProposalCreator", fields: [creatorUserId], references: [id])
+
+  chatRoomId    Int?
+  chatRoom      ChatRoom?        @relation(fields: [chatRoomId], references: [id])
+
+  approveTxHash String?
+  approvedAt    DateTime?
   
   options ProposalOption[]
   votes Vote[]
@@ -133,6 +146,9 @@ model Vote {
   proposalOptionId Int
   userId           Int
   votedAt          DateTime @default(now())
+
+  voteTxHash       String?
+  recordedAt       DateTime?
 
   proposal Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   option   ProposalOption @relation(fields: [proposalOptionId], references: [id], onDelete: Cascade)

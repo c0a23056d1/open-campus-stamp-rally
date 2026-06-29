@@ -22,7 +22,11 @@ Open Campus Stamp Rally/OC Passport
 10. スタンプ数・level・称号更新
 11. dNFT Metadata生成
 12. Symbol Metadata送信
-13. ダッシュボード/管理者画面に反映
+13. Proposal作成・提案
+14. 管理者承認
+15. Proposal専用チャットで議論
+16. DAO投票
+17. ダッシュボード・管理者画面へ反映
 
 使用技術
 ・Next.js
@@ -151,6 +155,53 @@ http://localhost:3000/admin/users
 ・初期NFT再付与
 ・Metadata再送信
 
+Proposal一覧(投票)
+http://localhost:3000/proposals
+
+現在公開されているProposal一覧を表示します
+・Proposal一覧表示
+・Levelによる投票制限
+・投票
+・Proposal専用チャットへの遷移
+
+Proposal提案
+http://localhost:3000/proposals/request
+
+Level3以上のユーザーのみ利用できます
+・Proposal提案
+・選択肢入力
+・管理者承認待ち(pending)
+
+チャットルーム一覧
+http://localhost:3000/chat
+
+Level1以上のユーザーが利用できます
+・参加可能チャット一覧
+・Proposal専用チャット表示
+
+チャット画面
+http://localhost:3000/chat/[roomId]
+
+・メッセージ一覧
+・メッセージ投稿
+・Proposalごとの議論
+
+管理者Proposal管理
+http://localhost:3000/admin/proposals
+管理者は
+・Proposal作成
+・Proposal承認
+・Proposal一覧確認
+・Proposal専用チャット管理
+
+管理者チャット管理
+http://localhost:3000/admin/chat
+
+管理者は
+・チャットルーム作成
+・チャットルーム削除
+・Proposalチャット確認
+
 ## Prisma Studio
 DBの中身を確認したいときは以下を実行します
 npx prisma studio
@@ -208,6 +259,24 @@ dNFT/Symbol連携
 ・symbolMetadata送信
 ・管理者画面からMetadata再送信
 
+DAO機能
+・Proposal作成(管理者)
+・Proposal提案(Level3以上)
+・Proposal承認
+・Proposal専用チャット
+・投票機能
+・Level制限付き投票
+・Proposal状態管理(pending/approved)
+
+チャット機能
+・チャットルーム作成
+・チャットルーム削除
+・複数チャットルーム
+・Proposal専用チャット
+・Level1以上のみ投稿
+・メッセージ投稿
+・メッセージ表示
+
 ## データモデル概要
 主に以下のテーブルを利用しています。
 ・User：ユーザー情報、ログイン情報、管理者フラグ
@@ -230,9 +299,25 @@ dNFT/Symbol連携
 ・GET /api/admin/users：ユーザー一覧取得
 ・POST /api/admin/users/reissue：初期NFT再付与
 ・POST /api/admin/users/resend-metadata：Metadata再送信
+・GET   /api/admin/proposals：管理者投票
+・POST  /api/admin/proposals：管理者投票一覧
+・PATCH /api/admin/proposals/approve：ユーザー提案承認
 
 スタンプ系
 ・POST /api/stamp/scan：QRコード読み取り結果を受け取り、スタンプ取得処理を実行
+
+Proposal系
+・GET  /api/proposals
+・POST /api/proposals/request
+
+Vote
+・POST /api/votes
+
+チャット系
+・GET  /api/chat/rooms
+・GET  /api/chat/messages
+・POST /api/chat/messages
+
 
 ## 今後実装予定
 Web3 連携
@@ -272,18 +357,23 @@ develop
 ## 現在の開発状況まとめ
 現時点では以下の流れが動作する状態です。
 1. ユーザー登録
-2. symbolウォレット自動生成
+2. Symbolウォレット自動生成
 3. OC Passport初期作成
-4. ログイン
-5. 管理者がSpotを登録してQRコード発行
-6. ユーザーがQRコードを読み取る
-7. スタンプ取得
-8. StampLog保存
-9. スタンプ数・level・称号変更
-10. ダッシュボードに反映
+4. 初期NFTオンチェーン付与
+5. ログイン
+6. 管理者がSpot登録
+7. QRコード発行
+8. QRコード読み取り
+9. StampLog保存
+10. Level・称号更新
 11. dNFT Metadata生成
 12. Symbol Metadata送信
-13. 管理者画面でユーザー状況確認
-14. 管理者画面から初期NFT再付与 / Metadata再送信
+13. Proposal作成（管理者）
+14. Proposal提案（Level3以上）
+15. Proposal承認
+16. Proposal専用チャット生成
+17. DAO投票
+18. チャット機能
+19. 管理者画面からユーザー・Proposal・チャット管理
 
 

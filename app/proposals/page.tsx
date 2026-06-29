@@ -26,6 +26,10 @@ type Proposal = {
   endAt: string;
   options: ProposalOption[];
   votes: Vote[];
+  chatRoom: {
+    id: number;
+    roomName: string;
+  } | null;
 };
 
 export default function ProposalsPage() {
@@ -116,6 +120,13 @@ export default function ProposalsPage() {
       </button>
 
       <p>あなたのLevel：{userLevel}</p>
+
+      <hr />
+      {userLevel >= 3 && (
+        <button onClick={() => router.push("/proposals/request")}>
+          Proposalを提案する
+        </button>
+      )}
 
       <hr />
 
@@ -216,6 +227,15 @@ export default function ProposalsPage() {
               {canVote && !voted && !isBeforeStart && !isAfterEnd && (
                 <button onClick={() => handleVote(proposal.id)}>
                   投票する
+                </button>
+              )}
+
+              {proposal.chatRoom && (
+                <button
+                  onClick={() => router.push(`/chat/${proposal.chatRoom!.id}`)}
+                  style={{ marginLeft: "10px" }}
+                >
+                  この投票について話す
                 </button>
               )}
             </div>

@@ -28,10 +28,14 @@ export async function GET(req: Request) {
   }
 
   const proposals = await prisma.proposal.findMany({
+    where: {
+      status: "approved",
+    },
     orderBy: {
       createdAt: "desc",
     },
     include: {
+      chatRoom: true,
       options: {
         orderBy: {
           sortOrder: "asc",

@@ -32,6 +32,14 @@ export async function GET(req: Request) {
       createdAt: "desc",
     },
     include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      chatRoom: true,
       options: {
         orderBy: {
           sortOrder: "asc",
@@ -41,7 +49,7 @@ export async function GET(req: Request) {
         },
       },
       votes: true,
-    },
+    }
   });
 
   return NextResponse.json({ proposals });
@@ -86,6 +94,13 @@ export async function POST(req: Request) {
       );
     }
 
+    const chatRoom = await prisma.chatRoom.create({
+      data: {
+        roomName: `${title} 議論ルーム`,
+        description: `このチャットルームは、提案「${title}」の議論用です。`,
+      },
+    });
+
     const proposal = await prisma.proposal.create({
       data: {
         title,
@@ -93,6 +108,7 @@ export async function POST(req: Request) {
         requiredLevel: Number(requiredLevel),
         startAt: new Date(startAt),
         endAt: new Date(endAt),
+        chatRoomId: chatRoom.id,
         options: {
           create: optionLabels.map((label, index) => ({
             label,
@@ -102,6 +118,7 @@ export async function POST(req: Request) {
       },
       include: {
         options: true,
+        chatRoom: true,
       },
     });
 

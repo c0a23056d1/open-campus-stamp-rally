@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendDaoEvent } from "@/lib/symbolDao";
 
 export async function POST(req: Request) {
   try {
@@ -82,16 +83,46 @@ export async function POST(req: Request) {
       },
     });
 
+    let voteTxHash: string | null = null;
+
+    try {
+      const result = await sendDaoEvent({
+        eventType: "VOTE_CAST",
+        proposalId: proposal.id,
+        title: proposal.title,
+        status: "voted",
+        actorUserId: Number(userId),
+        optionId: Number(proposalOptionId),
+        optionLabel: option.label,
+        actorLevel: user.nft.level,
+      });
+      voteTxHash = result.txHash;
+    } catch (symbolError) {
+      console.error("DAOイベント送信に失敗しました:", symbolError);
+    }
+
+    const updatedVote = await prisma.vote.update({
+      where: {
+        id: vote.id,
+      },
+      data: {
+        voteTxHash,
+        recordedAt: voteTxHash ? new Date() : null,
+      },
+    });
+
     return NextResponse.json({
-      message: "投票しました",
-      vote,
+      message: voteTxHash
+      ? "投票し、Symbolに記録しました"
+      : "投票しましたが、Symbolへの記録に失敗しました",
+      vote: updatedVote,
+      voteTxHash,
     });
   } catch (error) {
     console.error(error);
-
     return NextResponse.json(
-      { message: "投票に失敗しました。既に投票済みの可能性があります。" },
-      { status: 500 }
+      { message: "投票中にエラーが発生しました" },
+      { status: 500 },
     );
   }
 }
