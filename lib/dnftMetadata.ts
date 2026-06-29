@@ -4,6 +4,7 @@ export type DnftMetadataInput = {
   title: string;
   stampCount: number;
   visitedSpots: string[];
+  imageUrl?: string;
 };
 
 export function buildDnftMetadata({
@@ -12,32 +13,22 @@ export function buildDnftMetadata({
   title,
   stampCount,
   visitedSpots,
+  imageUrl,
 }: DnftMetadataInput) {
   return {
     name: `OC Passport Lv.${level}`,
     description: `Open Campus Stamp Rally Passport - ${title}`,
-    image: `/passport/level-${level}.png`,
+    image: imageUrl ?? `/passport/level-${level}.png`,
     level,
     title,
     stampCount,
     visitedSpots,
     attributes: [
-      {
-        trait_type: "Level",
-        value: level,
-      },
-      {
-        trait_type: "Title",
-        value: title,
-      },
-      {
-        trait_type: "Stamp Count",
-        value: stampCount,
-      },
-      {
-        trait_type: "Visited Spots",
-        value: visitedSpots,
-      },
+      { trait_type: "NFT ID", value: nftId },
+      { trait_type: "Level", value: level },
+      { trait_type: "Title", value: title },
+      { trait_type: "Stamp Count", value: stampCount },
+      { trait_type: "Visited Spots", value: visitedSpots },
     ],
   };
 }

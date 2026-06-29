@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildDnftMetadata } from "@/lib/dnftMetadata";
 import { sendDnftMetadata } from "@/lib/symbolMetadata";
+import { generatePassportPng } from "@/lib/dnft/generatePassportPng";
+import { uploadPngToPinata } from "@/lib/ipfs/uploadToPinata";
+
 
 function calculateLevel(stampCount: number) {
   if (stampCount >= 7) return { level: 4, title: "Campus Ambassador" };
@@ -90,12 +93,35 @@ export async function POST(req: Request) {
       );
     }
 
+    const spots = await prisma.spot.findMany({
+      select:{
+        spotName: true,
+        floor: true,
+      }
+    })
+
+    const pngBuffer = await generatePassportPng({
+      level,
+      title,
+      stampCount,
+      spots,
+      visitedSpots,
+    })
+
+    const cid = await uploadPngToPinata(
+      pngBuffer,
+      `${currentNft.nftId}-level-${level}-${level}-${Date.now()}.png`
+    );
+
+    const imageUrl = `ipfs://${cid}`;
+
     const dnftMetadata = buildDnftMetadata({
       nftId: currentNft.nftId,
       level,
       title,
       stampCount,
       visitedSpots,
+      imageUrl,
     });
 
     let updatedNft = await prisma.nFT.update({
@@ -153,6 +179,8 @@ export async function POST(req: Request) {
       },
       nft: updatedNft,
       metadata: dnftMetadata,
+      imageCid: cid,
+      imageUrl,
       metadataTxHash,
     });
   } catch (error) {
