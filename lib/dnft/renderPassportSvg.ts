@@ -59,7 +59,8 @@ function escapeXml(value: string) {
         .replaceAll("\"", "&quot;")
         .replaceAll("'", "&apos;");
 }
-function renderLevel0Frame(levelColor: string) {
+
+function renderOuterFrame(stroke: string) {
   return `
     <rect
       x="10"
@@ -68,9 +69,14 @@ function renderLevel0Frame(levelColor: string) {
       height="400"
       rx="18"
       fill="#ffffff"
-      stroke="${levelColor}"
+      stroke="${stroke}"
       stroke-width="5"
     />
+  `;
+}
+function renderLevel0Frame(levelColor: string) {
+  return `
+    ${renderOuterFrame(levelColor)}
   `;
 }
 
@@ -125,7 +131,22 @@ function renderLevel3Frame(levelColor: string) {
 
 function renderLevel4Frame(levelColor: string) {
   return `
-    ${renderLevel3Frame(levelColor)}
+    ${renderOuterFrame("url(#lv4Gradient)")}
+
+    ${renderLevel1Frame(levelColor)
+      .replace(renderOuterFrame(levelColor), "")}
+
+    ${
+      levelColor
+        ? `
+        <text x="55" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
+        <text x="265" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
+
+        <polygon points="160,18 166,28 154,28" fill="${levelColor}" opacity="0.9" />
+        <polygon points="160,402 166,392 154,392" fill="${levelColor}" opacity="0.9" />
+      `
+        : ""
+    }
   `;
 }
 
@@ -180,10 +201,39 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <svg
     width="320"
+        <defs>
+        <linearGradient
+            id="lv4Gradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="100%"
+        >
+            <stop offset="0%" stop-color="#3b82f6" />
+            <stop offset="35%" stop-color="#8b5cf6" />
+            <stop offset="70%" stop-color="#ec4899" />
+            <stop offset="100%" stop-color="#f59e0b" />
+        </linearGradient>
+    </defs>
     height="460"
     viewBox="0 0 320 460"
     xmlns="http://www.w3.org/2000/svg"
 >
+    <defs>
+        <linearGradient
+            id="lv4Gradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="100%"
+        >
+            <stop offset="0%" stop-color="#3b82f6" />
+            <stop offset="35%" stop-color="#8b5cf6" />
+            <stop offset="70%" stop-color="#ec4899" />
+            <stop offset="100%" stop-color="#f59e0b" />
+        </linearGradient>
+    </defs>
+
     ${renderFrame(props.level)}
     <circle cx="160" cy="34" r="16" fill="#ffffff" stroke="${levelColor}" stroke-width="2" />
     <text x="160" y="39" text-anchor="middle" font-size="16" font-weight="bold" fill="${levelColor}">
