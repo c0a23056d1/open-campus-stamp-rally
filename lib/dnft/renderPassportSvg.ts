@@ -47,8 +47,8 @@ function getLevelColor(level: number){
 function getLevelIcon(level: number) {
     if (level >= 4) return "♛";
     if (level >= 3) return "★";
-    if (level >= 2) return "◆";
-    if (level >= 1) return "✦";
+    if (level >= 2) return "✦";
+    if (level >= 1) return "◆";
 
     return "o";
 }
@@ -56,8 +56,8 @@ function getLevelIcon(level: number) {
 function getMedalIcon(level: number) {
     if (level >= 4) return "♛";
     if (level >= 3) return "★";
-    if (level >= 2) return "◆";
-    if (level >= 1) return "✦";
+    if (level >= 2) return "✦";
+    if (level >= 1) return "◆";
 
     return "o";
 }
@@ -119,9 +119,95 @@ function renderCornerDecoration(stroke: string) {
     <text x="58" y="370" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
     <text x="34" y="334" font-size="7" fill="${stroke}" opacity="0.6">✦</text>
 
-    <!-- 右下：メダルと被らないように控えめ -->
-    <text x="238" y="340" font-size="8" fill="${stroke}" opacity="0.65">✦</text>
-    <text x="286" y="334" font-size="7" text-anchor="end" fill="${stroke}" opacity="0.55">✦</text>
+    
+  `;
+}
+
+function renderBottomEmblem(stroke: string, icon: string) {
+  // エンブレム中心座標
+  const cx = 260;
+  const cy = 360; // ← ここを変更するだけで上下移動
+
+  return `
+    <!-- 外側の豪華リング -->
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="31"
+      fill="none"
+      stroke="${stroke}"
+      stroke-width="1.2"
+      opacity="0.6"
+      stroke-dasharray="2 2"
+    />
+
+    <!-- 外側 -->
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="28"
+      fill="#ffffff"
+      stroke="${stroke}"
+      stroke-width="3"
+    />
+
+    <!-- 中間リング -->
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="23"
+      fill="none"
+      stroke="${stroke}"
+      stroke-width="1.5"
+      opacity="0.45"
+    />
+
+    <!-- 内側の淡い円 -->
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="18"
+      fill="${stroke}"
+      opacity="0.12"
+    />
+
+    <!-- 内側の細いリング -->
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="15"
+      fill="none"
+      stroke="${stroke}"
+      stroke-width="1.2"
+      opacity="0.35"
+    />
+
+    <!-- 下リボン -->
+    <path
+      d="
+        M${cx - 16} ${cy + 24}
+        L${cx} ${cy + 14}
+        L${cx + 16} ${cy + 24}
+        L${cx + 10} ${cy + 35}
+        L${cx} ${cy + 28}
+        L${cx - 10} ${cy + 35}
+        Z
+      "
+      fill="${stroke}"
+      opacity="0.85"
+    />
+
+    <!-- 中央アイコン -->
+    <text
+      x="${cx}"
+      y="${cy + 9}"
+      text-anchor="middle"
+      font-size="28"
+      font-weight="bold"
+      fill="${stroke}"
+    >
+      ${icon}
+    </text>
   `;
 }
 
@@ -157,9 +243,7 @@ function renderLevel3Frame(levelColor: string) {
   return `
     ${renderLevel2Frame(levelColor)}
 
-    <text x="55" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
-    <text x="265" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
-
+    
     <polygon points="160,18 166,28 154,28" fill="${levelColor}" opacity="0.9" />
     <polygon points="160,402 166,392 154,392" fill="${levelColor}" opacity="0.9" />
   `;
@@ -171,8 +255,7 @@ function renderLevel4Frame(levelColor: string) {
     ${renderInnerFrame("url(#lv4Gradient)")}
     ${renderCornerDecoration("url(#lv4Gradient)")}
 
-    <text x="55" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
-    <text x="265" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
+    
 
     <polygon points="160,18 166,28 154,28" fill="${levelColor}" opacity="0.9" />
     <polygon points="160,402 166,392 154,392" fill="${levelColor}" opacity="0.9" />
@@ -286,10 +369,6 @@ return `<?xml version="1.0" encoding="UTF-8"?>
         ${props.stampCount} Stamp
     </text>
 
-    <circle cx="260" cy="370" r="18" fill="#ffffff" stroke="${levelColor}" stroke-width="3" />
-    <circle cx="260" cy="370" r="12" fill="${levelColor}" opacity="0.15" />
-    <text x="260" y="376" text-anchor="middle" font-size="18" font-weight="bold" fill="${levelColor}">
-        ${medalIcon}
-    </text>
+    ${renderBottomEmblem(levelColor, medalIcon)}
 </svg>`;
 }
