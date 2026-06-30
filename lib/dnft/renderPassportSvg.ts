@@ -24,6 +24,17 @@ const spotLayouts = [
     { spotName: "研究室F", x: 190, y: 145},
 ];
 
+const spotColors: Record<string, string> = {
+    "研究室A": "#FCA5A5", // パステル赤
+    "研究室B": "#FDBA74", // パステルオレンジ
+    "研究室C": "#FDE68A", // パステル黄
+    "研究室D": "#86EFAC", // パステル緑
+    "研究室E": "#7DD3FC", // パステル水色
+    "研究室F": "#93C5FD", // パステル青
+    "研究室G": "#C4B5FD", // パステル紫
+    "研究室H": "#F9A8D4", // パステルピンク
+};
+
 function getLevelColor(level: number){
     if (level >= 4) return "#ec4899";
     if (level === 3) return "#f59e0b";
@@ -74,6 +85,46 @@ function renderOuterFrame(stroke: string) {
     />
   `;
 }
+
+function renderInnerFrame(stroke: string) {
+  return `
+    <rect
+      x="22"
+      y="22"
+      width="276"
+      height="376"
+      rx="14"
+      fill="none"
+      stroke="${stroke}"
+      stroke-width="2"
+      opacity="0.55"
+    />
+  `;
+}
+
+function renderCornerDecoration(stroke: string) {
+  return `
+    <!-- 左上 -->
+    <text x="38" y="58" font-size="22" fill="${stroke}" opacity="0.9">✦</text>
+    <text x="58" y="42" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
+    <text x="34" y="76" font-size="7" fill="${stroke}" opacity="0.6">✦</text>
+
+    <!-- 右上 -->
+    <text x="282" y="58" font-size="22" text-anchor="end" fill="${stroke}" opacity="0.9">✦</text>
+    <text x="260" y="42" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
+    <text x="286" y="76" font-size="7" text-anchor="end" fill="${stroke}" opacity="0.6">✦</text>
+
+    <!-- 左下 -->
+    <text x="38" y="352" font-size="22" fill="${stroke}" opacity="0.9">✦</text>
+    <text x="58" y="370" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
+    <text x="34" y="334" font-size="7" fill="${stroke}" opacity="0.6">✦</text>
+
+    <!-- 右下：メダルと被らないように控えめ -->
+    <text x="238" y="340" font-size="8" fill="${stroke}" opacity="0.65">✦</text>
+    <text x="286" y="334" font-size="7" text-anchor="end" fill="${stroke}" opacity="0.55">✦</text>
+  `;
+}
+
 function renderLevel0Frame(levelColor: string) {
   return `
     ${renderOuterFrame(levelColor)}
@@ -83,23 +134,8 @@ function renderLevel0Frame(levelColor: string) {
 function renderLevel1Frame(levelColor: string) {
   return `
     ${renderLevel0Frame(levelColor)}
-
-    <rect
-      x="22"
-      y="22"
-      width="276"
-      height="376"
-      rx="14"
-      fill="none"
-      stroke="${levelColor}"
-      stroke-width="2"
-      opacity="0.55"
-    />
-
-    <path d="M32 52 L32 32 L52 32" fill="none" stroke="${levelColor}" stroke-width="3" stroke-linecap="round" />
-    <path d="M268 32 L288 32 L288 52" fill="none" stroke="${levelColor}" stroke-width="3" stroke-linecap="round" />
-    <path d="M32 368 L32 388 L52 388" fill="none" stroke="${levelColor}" stroke-width="3" stroke-linecap="round" />
-    <path d="M268 388 L288 388 L288 368" fill="none" stroke="${levelColor}" stroke-width="3" stroke-linecap="round" />
+    ${renderInnerFrame(levelColor)}
+    ${renderCornerDecoration(levelColor)}
   `;
 }
 
@@ -132,21 +168,14 @@ function renderLevel3Frame(levelColor: string) {
 function renderLevel4Frame(levelColor: string) {
   return `
     ${renderOuterFrame("url(#lv4Gradient)")}
+    ${renderInnerFrame("url(#lv4Gradient)")}
+    ${renderCornerDecoration("url(#lv4Gradient)")}
 
-    ${renderLevel1Frame(levelColor)
-      .replace(renderOuterFrame(levelColor), "")}
+    <text x="55" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
+    <text x="265" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
 
-    ${
-      levelColor
-        ? `
-        <text x="55" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
-        <text x="265" y="345" font-size="14" fill="${levelColor}" opacity="0.6">✦</text>
-
-        <polygon points="160,18 166,28 154,28" fill="${levelColor}" opacity="0.9" />
-        <polygon points="160,402 166,392 154,392" fill="${levelColor}" opacity="0.9" />
-      `
-        : ""
-    }
+    <polygon points="160,18 166,28 154,28" fill="${levelColor}" opacity="0.9" />
+    <polygon points="160,402 166,392 154,392" fill="${levelColor}" opacity="0.9" />
   `;
 }
 
@@ -174,7 +203,16 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
     const spotsSvg = visibleLayouts
         .map((spot) => {
             const isVisited = props.visitedSpots.includes(spot.spotName);
-            const fillcolor = isVisited ? levelColor : "#f3f4f6";
+
+let fillcolor = "#f3f4f6";
+
+if (isVisited) {
+    if (props.level >= 4) {
+        fillcolor = spotColors[spot.spotName] ?? levelColor;
+    } else {
+        fillcolor = levelColor;
+    }
+}
 
             return `
                 <g>
@@ -198,23 +236,9 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
             `;
         })
         .join("");
-    return `<?xml version="1.0" encoding="UTF-8"?>
+return `<?xml version="1.0" encoding="UTF-8"?>
 <svg
     width="320"
-        <defs>
-        <linearGradient
-            id="lv4Gradient"
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="100%"
-        >
-            <stop offset="0%" stop-color="#3b82f6" />
-            <stop offset="35%" stop-color="#8b5cf6" />
-            <stop offset="70%" stop-color="#ec4899" />
-            <stop offset="100%" stop-color="#f59e0b" />
-        </linearGradient>
-    </defs>
     height="460"
     viewBox="0 0 320 460"
     xmlns="http://www.w3.org/2000/svg"
