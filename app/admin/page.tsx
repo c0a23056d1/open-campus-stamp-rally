@@ -7,6 +7,14 @@ export default function AdminPage() {
   const router = useRouter();
   const [adminName, setAdminName] = useState("");
 
+  const [analytics, setAnalytics] = useState<{
+    totalUsers: number;
+    stampDistribution: {
+      stampCount: number;
+      userCount: number;
+    }[];
+  } | null>(null);
+
   useEffect(() => {
     const userId = localStorage.getItem("userId");
 
@@ -26,6 +34,15 @@ export default function AdminPage() {
       }
 
       setAdminName(data.user.name);
+
+      const analyticsRes = await fetch(
+        `/api/admin/analytics?adminUserId=${userId}`
+      );
+      const analyticsData = await analyticsRes.json();
+
+      if (analyticsRes.ok) {
+        setAnalytics(analyticsData);
+      }
     };
 
     checkAdmin();
@@ -116,6 +133,84 @@ export default function AdminPage() {
           </p>
         </div>
 
+        {analytics && (
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #e5e7eb",
+              borderRadius: "16px",
+              padding: "24px",
+              marginBottom: "24px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+            }}
+          >
+            <h2 style={{ marginTop: 0 }}>スタンプ取得状況</h2>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "220px 1fr",
+                gap: "20px",
+                alignItems: "start",
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: "#eff6ff",
+                  borderRadius: "16px",
+                  padding: "20px",
+                  textAlign: "center",
+                  border: "1px solid #bfdbfe",
+                }}
+              >
+                <p style={{ margin: 0, color: "#2563eb", fontWeight: "bold" }}>
+                  登録ユーザー数
+                </p>
+                <p
+                  style={{
+                    fontSize: "36px",
+                    fontWeight: "bold",
+                    margin: "8px 0 0",
+                    color: "#1d4ed8",
+                  }}
+                >
+                  {analytics.totalUsers}
+                </p>
+              </div>
+
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                <thead>
+                  <tr>
+                    <th style={tableHeaderStyle}>取得スタンプ数</th>
+                    <th style={tableHeaderStyle}>人数</th>
+                    <th style={tableHeaderStyle}>割合</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.stampDistribution.map((row) => {
+                    const percent = 
+                      analytics.totalUsers === 0
+                        ? 0
+                        : Math.round((row.userCount / analytics.totalUsers) * 100);
+                    return (
+                      <tr key={row.stampCount}>
+                        <td style={tableCellStyle}>{row.stampCount}個</td>
+                        <td style={tableCellStyle}>{row.userCount}人</td>
+                        <td style={tableCellStyle}>{percent}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div
           style={{
             display: "grid",
@@ -197,3 +292,17 @@ export default function AdminPage() {
     </div>
   );
 }
+
+const tableHeaderStyle: React.CSSProperties = {
+  borderBottom: "1px solid #e5e7eb",
+  padding: "10px",
+  textAlign: "left",
+  backgroundColor: "#f8fafc",
+  color: "#334155",
+};
+
+const tableCellStyle: React.CSSProperties = {
+  borderBottom: "1px solid #e5e7eb",
+  padding: "10px",
+  color: "#475569",
+};
