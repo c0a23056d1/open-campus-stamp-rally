@@ -94,11 +94,18 @@ export async function POST(req: Request) {
     }
 
     const spots = await prisma.spot.findMany({
-      select:{
+      select: {
         spotName: true,
         floor: true,
-      }
-    })
+        x: true,
+        y: true,
+        color: true,
+        icon: true,
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
 
     const pngBuffer = await generatePassportPng({
       level,

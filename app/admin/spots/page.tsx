@@ -10,6 +10,10 @@ type Spot = {
   floor: string;
   description: string | null;
   qrSecretCode: string;
+  x: number;
+  y: number;
+  color: string;
+  icon: string;
 };
 
 export default function AdminSpotsPage() {
@@ -18,6 +22,12 @@ export default function AdminSpotsPage() {
   const [spotName, setSpotName] = useState("");
   const [floor, setFloor] = useState("");
   const [description, setDescription] = useState("");
+
+  const [x, setX] = useState(0);
+  const [y, setY] = useState(0);
+  const [color, setColor] = useState("#93C5FD");
+  const [icon, setIcon] = useState("📍");
+
   const [spots, setSpots] = useState<Spot[]>([]);
   const [qrImages, setQrImages] = useState<Record<number, string>>({});
 
@@ -61,6 +71,10 @@ export default function AdminSpotsPage() {
         spotName,
         floor,
         description,
+        x,
+        y,
+        color,
+        icon,
       }),
     });
 
@@ -76,6 +90,10 @@ export default function AdminSpotsPage() {
     setSpotName("");
     setFloor("");
     setDescription("");
+    setX(0);
+    setY(0);
+    setColor("#93C5FD");
+    setIcon("📍");
 
     fetchSpots();
   };
@@ -115,6 +133,57 @@ export default function AdminSpotsPage() {
       <br />
 
       <div>
+        <label>X座標</label>
+        <br />
+        <input
+          type="number"
+          value={x}
+          onChange={(e) => setX(Number(e.target.value))}
+          placeholder="70"
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <label>Y座標</label>
+        <br />
+        <input
+          type="number"
+          value={y}
+          onChange={(e) => setY(Number(e.target.value))}
+          placeholder="145"
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <label>スポット色</label>
+        <br />
+        <input
+          type="color"
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
+        />
+        <span style={{ marginLeft: "10px" }}>{color}</span>
+      </div>
+
+      <br />
+
+      <div>
+        <label>アイコン</label>
+        <br />
+        <input
+          value={icon}
+          onChange={(e) => setIcon(e.target.value)}
+          placeholder="📍"
+        />
+      </div>
+
+      <br />
+
+      <div>
         <label>説明文</label>
         <br />
         <textarea
@@ -143,6 +212,9 @@ export default function AdminSpotsPage() {
         >
           <h3>{spot.spotName}</h3>
           <p>場所：{spot.floor}</p>
+          <p>座標：x={spot.x}, y={spot.y}</p>
+          <p>色：{spot.color}</p>
+          <p>アイコン：{spot.icon}</p>
           <p>説明：{spot.description}</p>
           <p>QRコード内容：{spot.qrSecretCode}</p>
 
