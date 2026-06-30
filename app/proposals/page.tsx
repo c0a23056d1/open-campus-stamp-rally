@@ -37,9 +37,9 @@ export default function ProposalsPage() {
   const [userLevel, setUserLevel] = useState(0);
   const [userVotes, setUserVotes] = useState<Vote[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [selectedOptions, setSelectedOptions] = useState<
-    Record<number, number>
-  >({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<number, number>>(
+    {}
+  );
 
   const fetchProposals = async () => {
     const userId = localStorage.getItem("userId");
@@ -111,137 +111,375 @@ export default function ProposalsPage() {
     return Math.round((count / total) * 100);
   };
 
+  const getStatusLabel = (proposal: Proposal) => {
+    const now = new Date();
+    if (now < new Date(proposal.startAt)) return "開始前";
+    if (now > new Date(proposal.endAt)) return "終了";
+    return "投票受付中";
+  };
+
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>DAO投票</h1>
-
-      <button onClick={() => router.push("/dashboard")}>
-        ダッシュボードへ戻る
-      </button>
-
-      <p>あなたのLevel：{userLevel}</p>
-
-      <hr />
-      {userLevel >= 3 && (
-        <button onClick={() => router.push("/proposals/request")}>
-          Proposalを提案する
-        </button>
-      )}
-
-      <hr />
-
-      {proposals.length === 0 ? (
-        <p>投票はまだありません</p>
-      ) : (
-        proposals.map((proposal) => {
-          const canVote = userLevel >= proposal.requiredLevel;
-          const voted = hasVoted(proposal.id);
-          const totalVotes = getTotalVotes(proposal);
-          const now = new Date();
-          const isBeforeStart = now < new Date(proposal.startAt);
-          const isAfterEnd = now > new Date(proposal.endAt);
-
-          return (
-            <div
-              key={proposal.id}
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f8fafc",
+        padding: "32px",
+        boxSizing: "border-box",
+      }}
+    >
+      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+        <header
+          style={{
+            backgroundColor: "#ffffff",
+            border: "1px solid #e5e7eb",
+            borderRadius: "20px",
+            padding: "24px",
+            marginBottom: "24px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "16px",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <p
               style={{
-                border: "1px solid #ccc",
-                borderRadius: "12px",
-                padding: "16px",
-                marginBottom: "20px",
+                color: "#7c3aed",
+                fontWeight: "bold",
+                fontSize: "14px",
+                margin: "0 0 8px",
               }}
             >
-              <h2>{proposal.title}</h2>
-              <p>{proposal.description}</p>
-              <p>必要Level：{proposal.requiredLevel}</p>
-              <p>開始：{new Date(proposal.startAt).toLocaleString()}</p>
-              <p>終了：{new Date(proposal.endAt).toLocaleString()}</p>
-              <p>総投票数：{totalVotes}</p>
+              DAO Governance
+            </p>
 
-              <h3>選択肢</h3>
+            <h1 style={{ margin: 0, color: "#0f172a", fontSize: "30px" }}>
+              DAO投票
+            </h1>
 
-              {proposal.options.map((option) => {
-                const voteCount = option.votes.length;
-                const percent = getPercent(voteCount, totalVotes);
+            <p style={{ margin: "10px 0 0", color: "#64748b" }}>
+              あなたのLevel：<strong>{userLevel}</strong>
+            </p>
+          </div>
 
-                return (
-                  <label
-                    key={option.id}
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            {userLevel >= 3 && (
+              <button
+                onClick={() => router.push("/proposals/request")}
+                style={styles.primaryButton}
+              >
+                Proposalを提案
+              </button>
+            )}
+
+            <button
+              onClick={() => router.push("/dashboard")}
+              style={styles.outlineButton}
+            >
+              ダッシュボードへ戻る
+            </button>
+          </div>
+        </header>
+
+        {proposals.length === 0 ? (
+          <section style={styles.emptyCard}>
+            <h2 style={{ color: "#0f172a" }}>投票はまだありません</h2>
+            <p>管理者がProposalを公開すると、ここに表示されます。</p>
+          </section>
+        ) : (
+          <div style={{ display: "grid", gap: "18px" }}>
+            {proposals.map((proposal) => {
+              const canVote = userLevel >= proposal.requiredLevel;
+              const voted = hasVoted(proposal.id);
+              const totalVotes = getTotalVotes(proposal);
+              const now = new Date();
+              const isBeforeStart = now < new Date(proposal.startAt);
+              const isAfterEnd = now > new Date(proposal.endAt);
+              const statusLabel = getStatusLabel(proposal);
+
+              return (
+                <section key={proposal.id} style={styles.proposalCard}>
+                  <div
                     style={{
-                      display: "block",
-                      border: "1px solid #ddd",
-                      borderRadius: "8px",
-                      padding: "10px",
-                      marginBottom: "8px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                      alignItems: "flex-start",
+                      flexWrap: "wrap",
                     }}
                   >
-                    <input
-                      type="radio"
-                      name={`proposal-${proposal.id}`}
-                      value={option.id}
-                      disabled={!canVote || voted || isBeforeStart || isAfterEnd}
-                      checked={selectedOptions[proposal.id] === option.id}
-                      onChange={() =>
-                        setSelectedOptions((prev) => ({
-                          ...prev,
-                          [proposal.id]: option.id,
-                        }))
-                      }
-                    />
+                    <div>
+                      <span
+                        style={{
+                          ...styles.statusBadge,
+                          backgroundColor:
+                            statusLabel === "投票受付中"
+                              ? "#dcfce7"
+                              : statusLabel === "開始前"
+                              ? "#fef3c7"
+                              : "#e5e7eb",
+                          color:
+                            statusLabel === "投票受付中"
+                              ? "#166534"
+                              : statusLabel === "開始前"
+                              ? "#92400e"
+                              : "#374151",
+                        }}
+                      >
+                        {statusLabel}
+                      </span>
 
-                    <span style={{ marginLeft: "8px" }}>
-                      {option.label}：{voteCount}票 / {percent}%
-                    </span>
+                      <h2 style={{ margin: "12px 0 8px", color: "#0f172a" }}>
+                        {proposal.title}
+                      </h2>
+
+                      <p
+                        style={{
+                          color: "#64748b",
+                          lineHeight: 1.7,
+                          margin: 0,
+                        }}
+                      >
+                        {proposal.description}
+                      </p>
+                    </div>
 
                     <div
                       style={{
-                        background: "#eee",
-                        height: "8px",
-                        borderRadius: "999px",
-                        marginTop: "6px",
+                        textAlign: "right",
+                        color: "#475569",
+                        minWidth: "100px",
                       }}
                     >
-                      <div
-                        style={{
-                          width: `${percent}%`,
-                          height: "8px",
-                          borderRadius: "999px",
-                          background: "#7c3aed",
-                        }}
-                      />
+                      <p style={{ margin: 0, fontSize: "13px" }}>総投票数</p>
+                      <strong style={{ fontSize: "26px", color: "#7c3aed" }}>
+                        {totalVotes}
+                      </strong>
                     </div>
-                  </label>
-                );
-              })}
+                  </div>
 
-              {!canVote && (
-                <p style={{ color: "red" }}>
-                  この投票にはLevel {proposal.requiredLevel}以上が必要です
-                </p>
-              )}
+                  <div style={styles.metaGrid}>
+                    <p>
+                      <strong>必要Level：</strong>
+                      {proposal.requiredLevel}
+                    </p>
+                    <p>
+                      <strong>開始：</strong>
+                      {new Date(proposal.startAt).toLocaleString()}
+                    </p>
+                    <p>
+                      <strong>終了：</strong>
+                      {new Date(proposal.endAt).toLocaleString()}
+                    </p>
+                  </div>
 
-              {isBeforeStart && <p>この投票はまだ開始されていません</p>}
-              {isAfterEnd && <p>この投票は終了しています</p>}
-              {voted && <p>投票済みです</p>}
+                  <div style={{ display: "grid", gap: "10px" }}>
+                    {proposal.options.map((option) => {
+                      const voteCount = option.votes.length;
+                      const percent = getPercent(voteCount, totalVotes);
+                      const selected =
+                        selectedOptions[proposal.id] === option.id;
 
-              {canVote && !voted && !isBeforeStart && !isAfterEnd && (
-                <button onClick={() => handleVote(proposal.id)}>
-                  投票する
-                </button>
-              )}
+                      return (
+                        <label
+                          key={option.id}
+                          style={{
+                            ...styles.optionCard,
+                            borderColor: selected ? "#7c3aed" : "#e5e7eb",
+                            backgroundColor: selected ? "#f5f3ff" : "#ffffff",
+                            opacity:
+                              !canVote || voted || isBeforeStart || isAfterEnd
+                                ? 0.75
+                                : 1,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "10px",
+                              alignItems: "center",
+                            }}
+                          >
+                            <input
+                              type="radio"
+                              name={`proposal-${proposal.id}`}
+                              value={option.id}
+                              disabled={
+                                !canVote || voted || isBeforeStart || isAfterEnd
+                              }
+                              checked={selected}
+                              onChange={() =>
+                                setSelectedOptions((prev) => ({
+                                  ...prev,
+                                  [proposal.id]: option.id,
+                                }))
+                              }
+                            />
 
-              {proposal.chatRoom && (
-                <button
-                  onClick={() => router.push(`/chat/${proposal.chatRoom!.id}`)}
-                  style={{ marginLeft: "10px" }}
-                >
-                  この投票について話す
-                </button>
-              )}
-            </div>
-          );
-        })
-      )}
+                            <strong>{option.label}</strong>
+                          </div>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              marginTop: "8px",
+                              color: "#64748b",
+                              fontSize: "14px",
+                            }}
+                          >
+                            <span>{voteCount}票</span>
+                            <span>{percent}%</span>
+                          </div>
+
+                          <div style={styles.progressBase}>
+                            <div
+                              style={{
+                                ...styles.progressBar,
+                                width: `${percent}%`,
+                              }}
+                            />
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{ marginTop: "16px" }}>
+                    {!canVote && (
+                      <p style={styles.warningText}>
+                        この投票にはLevel {proposal.requiredLevel}以上が必要です。
+                      </p>
+                    )}
+                    {isBeforeStart && (
+                      <p style={styles.warningText}>
+                        この投票はまだ開始されていません。
+                      </p>
+                    )}
+                    {isAfterEnd && (
+                      <p style={styles.warningText}>この投票は終了しています。</p>
+                    )}
+                    {voted && (
+                      <p style={styles.successText}>このProposalには投票済みです。</p>
+                    )}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: "16px",
+                      display: "flex",
+                      gap: "10px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {canVote && !voted && !isBeforeStart && !isAfterEnd && (
+                      <button
+                        onClick={() => handleVote(proposal.id)}
+                        style={styles.primaryButton}
+                      >
+                        投票する
+                      </button>
+                    )}
+
+                    {proposal.chatRoom && (
+                      <button
+                        onClick={() =>
+                          router.push(`/chat/${proposal.chatRoom!.id}`)
+                        }
+                        style={styles.outlineButton}
+                      >
+                        この投票について話す
+                      </button>
+                    )}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+const styles: { [key: string]: React.CSSProperties } = {
+  primaryButton: {
+    padding: "10px 18px",
+    borderRadius: "999px",
+    border: "none",
+    backgroundColor: "#7c3aed",
+    color: "#ffffff",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+  outlineButton: {
+    padding: "10px 18px",
+    borderRadius: "999px",
+    border: "1px solid #7c3aed",
+    backgroundColor: "#ffffff",
+    color: "#7c3aed",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+  emptyCard: {
+    backgroundColor: "#ffffff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "20px",
+    padding: "32px",
+    textAlign: "center",
+    color: "#64748b",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+  },
+  proposalCard: {
+    backgroundColor: "#ffffff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "20px",
+    padding: "24px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+  },
+  statusBadge: {
+    display: "inline-block",
+    padding: "6px 12px",
+    borderRadius: "999px",
+    fontSize: "13px",
+    fontWeight: "bold",
+  },
+  metaGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "4px 14px",
+    margin: "18px 0",
+    color: "#475569",
+    fontSize: "14px",
+  },
+  optionCard: {
+    border: "2px solid #e5e7eb",
+    borderRadius: "16px",
+    padding: "14px",
+    cursor: "pointer",
+  },
+  progressBase: {
+    height: "9px",
+    borderRadius: "999px",
+    backgroundColor: "#e5e7eb",
+    marginTop: "8px",
+    overflow: "hidden",
+  },
+  progressBar: {
+    height: "9px",
+    borderRadius: "999px",
+    backgroundColor: "#7c3aed",
+  },
+  warningText: {
+    color: "#dc2626",
+    fontWeight: "bold",
+    margin: "6px 0",
+  },
+  successText: {
+    color: "#16a34a",
+    fontWeight: "bold",
+    margin: "6px 0",
+  },
+};
