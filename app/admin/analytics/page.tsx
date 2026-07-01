@@ -3,58 +3,95 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type SpotAnalytics = {
-  id: number;
-  spotName: string;
-  floor: string;
-  visitCount: number;
-  percent: number;
+type AnalyticsData = {
+  overview: {
+    totalUsers: number;
+    totalStampLogs: number;
+    usersVisitedMultipleSpots: number;
+    multipleVisitRate: number;
+  };
+  circulation: {
+    spotVisitRanking: {
+      id: number;
+      spotName: string;
+      floor: string;
+      visitCount: number;
+    }[];
+    firstVisitSpots: {
+      spotName: string;
+      count: number;
+    }[];
+  };
+  communication: {
+    totalMessages: number;
+    chatUserCount: number;
+    roomMessageCounts: {
+      roomId: number;
+      roomName: string;
+      messageCount: number;
+    }[];
+    userMessageRanking: {
+      userId: number;
+      name: string | null;
+      email: string;
+      messageCount: number;
+    }[];
+  };
+  dao: {
+    totalProposals: number;
+    pendingProposals: number;
+    approvedProposals: number;
+    totalVotes: number;
+    votedUserCount: number;
+    proposalCreatorUserCount: number;
+  };
+  level: {
+    levelDistribution: {
+      level: number;
+      userCount: number;
+    }[];
+    levelActivity: {
+      level: number;
+      userCount: number;
+      messageCount: number;
+      voteCount: number;
+      proposalCount: number;
+    }[];
+  };
 };
 
 export default function AdminAnalyticsPage() {
   const router = useRouter();
-
-  const [data, setData] = useState<{
-    totalSpots: number;
-    totalVisits: number;
-    spotAnalytics: SpotAnalytics[];
-  } | null>(null);
-
-  const [loading, setLoading] = useState(true);
-
-  const fetchAnalytics = async () => {
-    const adminUserId = localStorage.getItem("userId");
-
-    if (!adminUserId) {
-      router.push("/login");
-      return;
-    }
-
-    const res = await fetch(
-      `/api/admin/spot-analytics?adminUserId=${adminUserId}`
-    );
-    const json = await res.json();
-
-    if (!res.ok) {
-      alert(json.message);
-      router.push("/admin");
-      return;
-    }
-
-    setData(json);
-    setLoading(false);
-  };
+  const [data, setData] = useState<AnalyticsData | null>(null);
 
   useEffect(() => {
-    fetchAnalytics();
-  }, []);
+    const fetchAnalytics = async () => {
+      const adminUserId = localStorage.getItem("userId");
 
-  if (loading) {
-    return <div style={{ padding: "24px" }}>読み込み中...</div>;
-  }
+      if (!adminUserId) {
+        router.push("/login");
+        return;
+      }
+
+      const res = await fetch(
+        `/api/admin/advanced-analytics?adminUserId=${adminUserId}`
+      );
+      const json = await res.json();
+
+      if (!res.ok) {
+        alert(json.message);
+        router.push("/admin");
+        return;
+      }
+
+      setData(json);
+    };
+
+    fetchAnalytics();
+  }, [router]);
 
   if (!data) {
-    return <div style={{ padding: "24px" }}>データがありません</div>;
+    return <div style={{ padding: "24px" }}>読み込み中...</div>;
   }
 
   return (
@@ -62,10 +99,10 @@ export default function AdminAnalyticsPage() {
       <div style={styles.container}>
         <header style={styles.headerCard}>
           <div>
-            <p style={styles.kicker}>Spot Analytics</p>
-            <h1 style={styles.pageTitle}>スポット分析</h1>
+            <p style={styles.kicker}>Analytics</p>
+            <h1 style={styles.pageTitle}>分析ダッシュボード</h1>
             <p style={styles.subtitle}>
-              各研究室・展示スポットの訪問数を確認できます。
+              スタンプ取得、回遊、交流、DAO参加状況を確認できます。
             </p>
           </div>
 
@@ -75,48 +112,182 @@ export default function AdminAnalyticsPage() {
         </header>
 
         <div style={styles.summaryGrid}>
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryLabel}>登録スポット数</p>
-            <strong style={styles.summaryNumber}>{data.totalSpots}</strong>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryLabel}>総スタンプ取得数</p>
-            <strong style={styles.summaryNumber}>{data.totalVisits}</strong>
-          </div>
+          <SummaryCard title="登録ユーザー数" value={data.overview.totalUsers} />
+          <SummaryCard title="総スタンプ取得数" value={data.overview.totalStampLogs} />
+          <SummaryCard title="複数スポット訪問者" value={data.overview.usersVisitedMultipleSpots} />
+          <SummaryCard title="複数訪問率" value={`${data.overview.multipleVisitRate}%`} />
         </div>
 
         <section style={styles.card}>
-          <h2 style={{ marginTop: 0 }}>スポット別訪問数</h2>
+          <h2>回遊分析</h2>
+          <h3>スポット別訪問数</h3>
+          {data.circulation.spotVisitRanking.map((spot) => (
+            <BarRow
+              key={spot.id}
+              label={`${spot.floor}：${spot.spotName}`}
+              value={spot.visitCount}
+              max={Math.max(
+                1,
+                ...data.circulation.spotVisitRanking.map((s) => s.visitCount)
+              )}
+              suffix="件"
+            />
+          ))}
 
-          {data.spotAnalytics.length === 0 ? (
-            <p style={{ color: "#64748b" }}>スポットがまだ登録されていません。</p>
+          <h3 style={{ marginTop: "24px" }}>最初に訪問されたスポット</h3>
+          {data.circulation.firstVisitSpots.length === 0 ? (
+            <p style={styles.emptyText}>まだ訪問データがありません。</p>
           ) : (
-            <div style={{ display: "grid", gap: "12px" }}>
-              {data.spotAnalytics.map((spot) => (
-                <div key={spot.id} style={styles.spotRow}>
-                  <div>
-                    <strong>
-                      {spot.floor}：{spot.spotName}
-                    </strong>
-                    <p style={styles.smallText}>
-                      訪問数：{spot.visitCount}件 / 全体の{spot.percent}%
-                    </p>
-                  </div>
-
-                  <div style={styles.barBase}>
-                    <div
-                      style={{
-                        ...styles.bar,
-                        width: `${spot.percent}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+            data.circulation.firstVisitSpots.map((spot) => (
+              <BarRow
+                key={spot.spotName}
+                label={spot.spotName}
+                value={spot.count}
+                max={Math.max(
+                  1,
+                  ...data.circulation.firstVisitSpots.map((s) => s.count)
+                )}
+                suffix="人"
+              />
+            ))
           )}
         </section>
+
+        <section style={styles.card}>
+          <h2>交流分析</h2>
+
+          <div style={styles.summaryGrid}>
+            <SummaryCard title="総メッセージ数" value={data.communication.totalMessages} />
+            <SummaryCard title="チャット参加者数" value={data.communication.chatUserCount} />
+          </div>
+
+          <h3>ルーム別メッセージ数</h3>
+          {data.communication.roomMessageCounts.map((room) => (
+            <BarRow
+              key={room.roomId}
+              label={room.roomName}
+              value={room.messageCount}
+              max={Math.max(
+                1,
+                ...data.communication.roomMessageCounts.map((r) => r.messageCount)
+              )}
+              suffix="件"
+            />
+          ))}
+
+          <h3 style={{ marginTop: "24px" }}>ユーザー別投稿数</h3>
+          {data.communication.userMessageRanking.length === 0 ? (
+            <p style={styles.emptyText}>まだ投稿はありません。</p>
+          ) : (
+            data.communication.userMessageRanking.map((user) => (
+              <BarRow
+                key={user.userId}
+                label={user.name || user.email}
+                value={user.messageCount}
+                max={Math.max(
+                  1,
+                  ...data.communication.userMessageRanking.map(
+                    (u) => u.messageCount
+                  )
+                )}
+                suffix="件"
+              />
+            ))
+          )}
+        </section>
+
+        <section style={styles.card}>
+          <h2>DAO参加分析</h2>
+
+          <div style={styles.summaryGrid}>
+            <SummaryCard title="Proposal数" value={data.dao.totalProposals} />
+            <SummaryCard title="承認済み" value={data.dao.approvedProposals} />
+            <SummaryCard title="承認待ち" value={data.dao.pendingProposals} />
+            <SummaryCard title="総投票数" value={data.dao.totalVotes} />
+            <SummaryCard title="投票参加者数" value={data.dao.votedUserCount} />
+            <SummaryCard title="提案者数" value={data.dao.proposalCreatorUserCount} />
+          </div>
+        </section>
+
+        <section style={styles.card}>
+          <h2>Level分析</h2>
+
+          <h3>Level別ユーザー数</h3>
+          {data.level.levelDistribution.map((row) => (
+            <BarRow
+              key={row.level}
+              label={`Level ${row.level}`}
+              value={row.userCount}
+              max={Math.max(
+                1,
+                ...data.level.levelDistribution.map((r) => r.userCount)
+              )}
+              suffix="人"
+            />
+          ))}
+
+          <h3 style={{ marginTop: "24px" }}>Level別活動量</h3>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Level</th>
+                <th style={styles.th}>人数</th>
+                <th style={styles.th}>投稿数</th>
+                <th style={styles.th}>投票数</th>
+                <th style={styles.th}>提案数</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.level.levelActivity.map((row) => (
+                <tr key={row.level}>
+                  <td style={styles.td}>Level {row.level}</td>
+                  <td style={styles.td}>{row.userCount}</td>
+                  <td style={styles.td}>{row.messageCount}</td>
+                  <td style={styles.td}>{row.voteCount}</td>
+                  <td style={styles.td}>{row.proposalCount}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({ title, value }: { title: string; value: number | string }) {
+  return (
+    <div style={styles.summaryCard}>
+      <p style={styles.summaryLabel}>{title}</p>
+      <strong style={styles.summaryNumber}>{value}</strong>
+    </div>
+  );
+}
+
+function BarRow({
+  label,
+  value,
+  max,
+  suffix,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  suffix: string;
+}) {
+  const percent = max === 0 ? 0 : Math.round((value / max) * 100);
+
+  return (
+    <div style={styles.barRow}>
+      <div style={styles.barHeader}>
+        <strong>{label}</strong>
+        <span>
+          {value}
+          {suffix}
+        </span>
+      </div>
+      <div style={styles.barBase}>
+        <div style={{ ...styles.bar, width: `${percent}%` }} />
       </div>
     </div>
   );
@@ -130,7 +301,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     boxSizing: "border-box",
   },
   container: {
-    maxWidth: "1100px",
+    maxWidth: "1180px",
     margin: "0 auto",
   },
   headerCard: {
@@ -172,26 +343,27 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   summaryGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "16px",
-    marginBottom: "20px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: "14px",
+    marginBottom: "18px",
   },
   summaryCard: {
     backgroundColor: "#ffffff",
     border: "1px solid #e5e7eb",
-    borderRadius: "18px",
-    padding: "20px",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+    borderRadius: "16px",
+    padding: "18px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.04)",
   },
   summaryLabel: {
     margin: 0,
     color: "#64748b",
     fontWeight: "bold",
+    fontSize: "14px",
   },
   summaryNumber: {
     display: "block",
     marginTop: "8px",
-    fontSize: "34px",
+    fontSize: "30px",
     color: "#2563eb",
   },
   card: {
@@ -199,18 +371,22 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: "1px solid #e5e7eb",
     borderRadius: "20px",
     padding: "24px",
+    marginBottom: "20px",
     boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
   },
-  spotRow: {
+  barRow: {
     border: "1px solid #e5e7eb",
-    borderRadius: "16px",
-    padding: "14px",
+    borderRadius: "14px",
+    padding: "12px",
+    marginBottom: "10px",
     backgroundColor: "#f8fafc",
   },
-  smallText: {
-    margin: "6px 0 10px",
-    color: "#64748b",
-    fontSize: "14px",
+  barHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    marginBottom: "8px",
+    color: "#334155",
   },
   barBase: {
     height: "10px",
@@ -222,5 +398,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: "10px",
     borderRadius: "999px",
     backgroundColor: "#2563eb",
+  },
+  emptyText: {
+    color: "#64748b",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  th: {
+    borderBottom: "1px solid #e5e7eb",
+    padding: "10px",
+    textAlign: "left",
+    backgroundColor: "#f8fafc",
+    color: "#334155",
+  },
+  td: {
+    borderBottom: "1px solid #e5e7eb",
+    padding: "10px",
+    color: "#475569",
   },
 };
