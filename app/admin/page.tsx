@@ -72,7 +72,7 @@ export default function AdminPage() {
     {
       title: "スポット分析",
       description: "スポット別訪問数や参加者の回遊状況を確認します。（未実装）",
-      path: null,
+      path: "/admin/analytics",
     },
   ];
 
@@ -282,7 +282,7 @@ export default function AdminPage() {
                     cursor: "not-allowed",
                   }}
                 >
-                  未実装
+                  開く
                 </button>
               )}
             </div>
