@@ -82,7 +82,7 @@ export default function DashboardPage() {
   };
 
   if (!passport) {
-    return <div style={{ padding: "20px" }}>読み込み中...</div>;
+    return <div style={{ padding: "24px" }}>読み込み中...</div>;
   }
 
   const visitedSpots = passport.stamps.map((stamp) => stamp.spotName);
@@ -99,7 +99,7 @@ export default function DashboardPage() {
     : null;
 
   const stampCount = passport.nft?.stampCount ?? 0;
-
+  const totalSpotCount = passport.spots.length;
   const dnftImageUrl = passport.nft?.imageUrl
       ? passport.nft.imageUrl.replace(
         "ipfs://",
@@ -168,46 +168,111 @@ export default function DashboardPage() {
 
       <hr />
 
-      <h2>OC Passport</h2>
+            {/* <h2 style={{ textAlign: "center" }}>OC Passport</h2> */}
+
       <div
         style={{
           border: `4px solid ${passportDesign.borderColor}`,
           backgroundColor: passportDesign.backgroundColor,
-          borderRadius: "16px",
-          padding: "20px",
-          maxWidth: "360px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0,1)",
+          borderRadius: "20px",
+          padding: "18px",
+          maxWidth: "480px",
+          margin: "0 auto",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
         }}
       >
-        <div style={{ textAlign: "center",  fontWeight: "bold" }}>
-          {passportDesign.label}
-        </div>
-
-        <h3 style={{ textAlign: "center" }}>OC Passport</h3>
-        <h4 style={{ textAlign: "center" }}>{passportDesign.title}</h4>
-        
         {dnftImageUrl && (
-          <div style={{ textAlign: "center", margin: "16px 0" }}>
+          <div
+            style={{
+              textAlign: "center",
+              margin: "8px 0 6px",
+            }}
+          >
             <img
               src={dnftImageUrl}
               alt="dNFT Passport"
-              style={{ 
-                width: "220px",
-                borderRadius: "12px",
-                border: `2px solid ${passportDesign.borderColor}`,
+              style={{
+                width: "100%",
+                maxWidth: "420px",
+                borderRadius: "16px",
+                display: "block",
+                margin: "0 auto",
               }}
             />
           </div>
         )}
 
-        <p>NFT ID：{passport.nft?.nftId}</p>
-        <p>現在のLevel：{passportDesign.level}</p>
-        <p>称号：{passportDesign.title}</p>
-        <p>取得スタンプ：{stampCount}</p>
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: "-48px",
+          }}
+        >
+          <p
+            style={{
+              margin: "0 0 4px",
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: passportDesign.borderColor,
+            }}
+          >
+            {passportDesign.title}
+          </p>
 
-        <p style={{ fontSize: "14px" }}>
-          {passportDesign.description}
-        </p>
+          <p
+            style={{
+              margin: "0",
+              fontSize: "16px",
+              fontWeight: "bold",
+            }}
+          >
+            {passportDesign.label}
+          </p>
+
+          <div
+            style={{
+              margin: "18px auto 8px",
+              maxWidth: "260px",
+            }}
+          >
+            <div
+              style={{
+                height: "6px",
+                backgroundColor: "#e5e7eb",
+                borderRadius: "999px",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${
+                    totalSpotCount > 0
+                      ? (stampCount / totalSpotCount) * 100
+                      : 0
+                  }%`,
+                  backgroundColor: passportDesign.borderColor,
+                  borderRadius: "999px",
+                }}
+              />
+            </div>
+
+            <p
+              style={{
+                margin: "8px 0 0",
+                fontSize: "18px",
+                fontWeight: "bold",
+                color: passportDesign.borderColor,
+              }}
+            >
+              {stampCount} / {totalSpotCount} Stamp
+            </p>
+          </div>
+
+          <p style={{ margin: "12px 0 0", fontSize: "14px" }}>
+            {passportDesign.description}
+          </p>
+        </div>
       </div>
 
       <hr />
