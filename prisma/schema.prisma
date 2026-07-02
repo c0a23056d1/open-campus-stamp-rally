@@ -68,6 +68,11 @@ model Spot {
   description   String?
   qrSecretCode  String   @unique
 
+  x             Int      @default(0)
+  y             Int      @default(0)
+  color         String   @default("#93C5FD")
+  icon          String   @default("📍")
+
   stampLogs     StampLog[]
 }
 
