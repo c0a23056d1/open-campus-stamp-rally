@@ -129,6 +129,17 @@ export async function GET(req: Request) {
             name: true,
           },
         },
+        replyToMessage: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        reactions: true,
       },
     });
 
@@ -147,7 +158,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { userId, roomId, messageText } = await req.json();
+    const { userId, roomId, messageText, replyToMessageId } = await req.json();
 
     if (!userId || !roomId || !messageText) {
       return NextResponse.json(
@@ -191,6 +202,7 @@ export async function POST(req: Request) {
         roomId: roomIdNumber,
         userId: userIdNumber,
         messageText: trimmedMessage,
+        replyToMessageId: replyToMessageId ? Number(replyToMessageId) : null,
       },
       include: {
         user: {
@@ -199,6 +211,17 @@ export async function POST(req: Request) {
             name: true,
           },
         },
+        replyToMessage: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        reactions: true,
       },
     });
 
