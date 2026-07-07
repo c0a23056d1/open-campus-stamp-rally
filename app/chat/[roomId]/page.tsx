@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+type ChatReaction = {
+  id: number;
+  emoji: string;
+  userId: number;
+};
+
 type ChatRoom = {
   id: number;
   roomName: string;
@@ -17,6 +23,15 @@ type ChatMessage = {
     id: number;
     name: string | null;
   };
+  replyToMessage?: {
+    id: number;
+    messageText: string;
+    user: {
+      id: number;
+      name: string | null;
+    };
+  } | null;
+  reactions: ChatReaction[];
 };
 
 export default function ChatRoomPage() {
@@ -29,6 +44,7 @@ export default function ChatRoomPage() {
   const [messageText, setMessageText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [replyToMessage, setReplyToMessage] = useState<ChatMessage | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -103,6 +119,7 @@ export default function ChatRoomPage() {
         userId,
         roomId,
         messageText,
+        replyToMessageId: replyToMessage?.id ?? null,
       }),
     });
 
@@ -117,6 +134,7 @@ export default function ChatRoomPage() {
     setMessageText("");
     await fetchMessages();
     setSending(false);
+    setReplyToMessage(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -124,6 +142,36 @@ export default function ChatRoomPage() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleReaction = async (messageId: number, emoji: string) => {
+    const userId = localStorage.getItem("userId");
+
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+
+    const res = await fetch("/api/chat/reactions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        messageId,
+        emoji,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message);
+      return;
+    }
+
+    fetchMessages();
   };
 
   if (loading) {
@@ -201,6 +249,25 @@ export default function ChatRoomPage() {
                     {isMine ? "自分" : msg.user.name ?? "名無しユーザー"}
                   </div>
 
+                  {msg.replyToMessage && (
+                    <div
+                      style={{
+                        backgroundColor: "#e2e8f0",
+                        borderLeft: "4px solid #2563eb",
+                        padding: "8px",
+                        borderRadius: "8px",
+                        marginBottom: "8px",
+                        fontSize: "13px",
+                        color: "#475569",
+                      }}
+                    >
+                      <strong>
+                        {msg.replyToMessage.user.name ?? "名無しユーザー"}への返信
+                      </strong>
+                      <div>{msg.replyToMessage.messageText}</div>
+                    </div>
+                  )}
+
                   <div
                     style={{
                       whiteSpace: "pre-wrap",
@@ -220,6 +287,35 @@ export default function ChatRoomPage() {
                   >
                     {new Date(msg.createdAt).toLocaleString()}
                   </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "6px",
+                      marginTop: "8px",
+                      justifyContent: isMine ? "flex-end" : "flex-start",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <button onClick={() => setReplyToMessage(msg)}>
+                      返信
+                    </button>
+
+                    {["👍", "❤️", "👏"].map((emoji) => {
+                      const count = msg.reactions.filter(
+                        (reaction) => reaction.emoji === emoji
+                      ).length;
+
+                      return (
+                        <button
+                          key={emoji}
+                          onClick={() => handleReaction(msg.id, emoji)}
+                        >
+                          {emoji} {count > 0 ? count : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             );
@@ -228,6 +324,27 @@ export default function ChatRoomPage() {
 
         <div ref={bottomRef} />
       </div>
+
+      {replyToMessage && (
+        <div
+          style={{
+            marginTop: "16px",
+            padding: "10px 12px",
+            borderRadius: "12px",
+            backgroundColor: "#eff6ff",
+            border: "1px solid #bfdbfe",
+            color: "#1e40af",
+          }}
+        >
+          <strong>
+            {replyToMessage.user.name ?? "名無しユーザー"}に返信中
+          </strong>
+          <p style={{ margin: "6px 0" }}>{replyToMessage.messageText}</p>
+          <button onClick={() => setReplyToMessage(null)}>
+            返信をキャンセル
+          </button>
+        </div>
+      )}
 
       <div style={{ marginTop: "16px" }}>
         <textarea

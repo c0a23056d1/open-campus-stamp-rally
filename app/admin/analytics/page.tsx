@@ -45,6 +45,15 @@ type AnalyticsData = {
     votedUserCount: number;
     proposalCreatorUserCount: number;
   };
+  continuity: {
+    usersWithLoginHistory: number;
+    active7Days: number;
+    active14Days: number;
+    active30Days: number;
+    active7DaysRate: number;
+    active14DaysRate: number;
+    active30DaysRate: number;
+  };
   level: {
     levelDistribution: {
       level: number;
@@ -194,6 +203,56 @@ export default function AdminAnalyticsPage() {
               />
             ))
           )}
+        </section>
+
+        <section style={styles.card}>
+          <h2>継続的関係形成分析</h2>
+
+          <div style={styles.summaryGrid}>
+            <SummaryCard
+              title="ログイン履歴あり"
+              value={data.continuity.usersWithLoginHistory}
+            />
+            <SummaryCard
+              title="直近7日アクセス"
+              value={`${data.continuity.active7Days}人`}
+            />
+            <SummaryCard
+              title="直近14日アクセス"
+              value={`${data.continuity.active14Days}人`}
+            />
+            <SummaryCard
+              title="直近30日アクセス"
+              value={`${data.continuity.active30Days}人`}
+            />
+          </div>
+
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>期間</th>
+                <th style={styles.th}>アクセス人数</th>
+                <th style={styles.th}>継続利用率</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={styles.td}>直近7日</td>
+                <td style={styles.td}>{data.continuity.active7Days}人</td>
+                <td style={styles.td}>{data.continuity.active7DaysRate}%</td>
+              </tr>
+              <tr>
+                <td style={styles.td}>直近14日</td>
+                <td style={styles.td}>{data.continuity.active14Days}人</td>
+                <td style={styles.td}>{data.continuity.active14DaysRate}%</td>
+              </tr>
+              <tr>
+                <td style={styles.td}>直近30日</td>
+                <td style={styles.td}>{data.continuity.active30Days}人</td>
+                <td style={styles.td}>{data.continuity.active30DaysRate}%</td>
+              </tr>
+            </tbody>
+          </table>
         </section>
 
         <section style={styles.card}>
