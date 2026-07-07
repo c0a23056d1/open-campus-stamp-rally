@@ -1,6 +1,10 @@
 type Spot = {
     spotName: string;
     floor: string;
+    x: number;
+    y: number;
+    color: string;
+    icon: string;
 };
 
 type PassportMapProps = {
@@ -11,21 +15,8 @@ type PassportMapProps = {
     y?: number;
 };
 
-const spotLayouts = [
-    { spotName: "研究室G", floor: "8F", x: 70, y: 45},
-    { spotName: "研究室H", floor: "8F", x: 130, y: 45},
-
-    { spotName: "研究室B", floor: "7F", x: 70, y: 95},
-    { spotName: "研究室C", floor: "7F", x: 130, y: 95},
-    { spotName: "研究室D", floor: "7F", x: 190, y: 95},
-
-    { spotName: "研究室A", floor: "6F", x: 70, y: 145},
-    { spotName: "研究室E", floor: "6F", x: 130, y: 145},
-    { spotName: "研究室F", floor: "6F", x: 190, y: 145},
-];
-
 function getSpotColor(isVisited: boolean, level: number) {
-    if (!isVisited)return "#e5e7eb";
+    if (!isVisited) return "#e5e7eb";
 
     if (level >= 4) return "#ec4899";
     if (level === 3) return "#f59e0b";
@@ -35,50 +26,75 @@ function getSpotColor(isVisited: boolean, level: number) {
     return "#9ca3af";
 }
 
+function getFloorLabelY(floor: string) {
+    switch (floor) {
+        case "9F":
+            return 28;
+        case "8F":
+            return 63;
+        case "7F":
+            return 113;
+        case "6F":
+            return 163;
+        default:
+            return 213;
+    }
+}
+
 export function PassportMap({
     spots,
     visitedSpots,
     level,
     x = 0,
-    y= 0,
+    y = 0,
 }: PassportMapProps) {
-    const existingSpotNames = spots.map((spot) => spot.spotName);
-
-    const visibleLayouts = spotLayouts.filter((layout) =>
-        existingSpotNames.includes(layout.spotName)
-    );
+    // 重複しない階数一覧
+    const floors = [...new Set(spots.map((spot) => spot.floor))].sort().reverse();
 
     return (
-        <g transform={'translate(${x}, ${y})'}>
+        <g transform={`translate(${x}, ${y})`}>
+            {/* 階数表示 */}
+            {floors.map((floor) => (
+                <text
+                    key={floor}
+                    x="20"
+                    y={getFloorLabelY(floor)}
+                    fontSize="13"
+                    fontWeight="bold"
+                >
+                    {floor}
+                </text>
+            ))}
 
-            <text x="20" y="63" fontSize="13" fontWeight="bold">
-                8F
-            </text>
-            <text x="20" y="113" fontSize="13" fontWeight="bold">
-                7F
-            </text>
-            <text x="20" y="163" fontSize="13" fontWeight="bold">
-                6F
-            </text>
-
-            {visibleLayouts.map((spot) => {
+            {/* スポット描画 */}
+            {spots.map((spot) => {
                 const isVisited = visitedSpots.includes(spot.spotName);
                 const color = getSpotColor(isVisited, level);
 
                 return (
                     <g key={spot.spotName}>
                         <title>{spot.spotName}</title>
-                        
+
                         <rect
                             x={spot.x}
                             y={spot.y}
                             width="48"
                             height="28"
                             rx="6"
-                            fill={isVisited ? color : "#f3f4f6"}
+                            fill={isVisited ? spot.color : "#f3f4f6"}
                             stroke="#cbd5e1"
-                            strokeWidth="1"                        
+                            strokeWidth="1"
                         />
+
+                        <text
+                            x={spot.x + 24}
+                            y={spot.y - 6}
+                            textAnchor="middle"
+                            fontSize="9"
+                            fill="#374151"
+                        >
+                            {spot.spotName}
+                        </text>
 
                         {isVisited && (
                             <text
@@ -88,7 +104,7 @@ export function PassportMap({
                                 fontSize="13"
                                 fill="#ffffff"
                             >
-                                📍   
+                                {spot.icon}
                             </text>
                         )}
                     </g>

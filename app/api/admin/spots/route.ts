@@ -29,7 +29,16 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { userId, spotName, floor, description } = await req.json();
+  const {
+    userId,
+    spotName,
+    floor,
+    description,
+    x,
+    y,
+    color,
+    icon,
+  } = await req.json();
 
   if (!(await checkAdmin(Number(userId)))) {
     return NextResponse.json(
@@ -46,6 +55,11 @@ export async function POST(req: Request) {
       floor,
       description,
       qrSecretCode,
+
+      x: Number(x),
+      y: Number(y),
+      color,
+      icon,
     },
   });
   await prisma.chatRoom.create({

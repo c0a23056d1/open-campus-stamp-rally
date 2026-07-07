@@ -74,7 +74,6 @@ export default function DashboardPage() {
   }
 
   const visitedSpots = passport.stamps.map((stamp) => stamp.spotName);
-  const stampCount = passport.nft?.stampCount ?? 0;
 
   const dnftMetadata = passport.nft
     ? buildDnftMetadata({
@@ -87,6 +86,8 @@ export default function DashboardPage() {
       })
     : null;
 
+  const stampCount = passport.nft?.stampCount ?? 0;
+  const totalSpotCount = passport.spots.length;
   const dnftImageUrl = passport.nft?.imageUrl
     ? passport.nft.imageUrl.replace(
         "ipfs://",
@@ -213,96 +214,126 @@ export default function DashboardPage() {
             alignItems: "start",
           }}
         >
-          <section
+        <section
+          style={{
+            border: `4px solid ${passportDesign.borderColor}`,
+            backgroundColor: passportDesign.backgroundColor,
+            borderRadius: "24px",
+            padding: "18px",
+            boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
+            textAlign: "center",
+          }}
+        >
+          {dnftImageUrl ? (
+            <div
+              style={{
+                textAlign: "center",
+                margin: "0 auto",
+              }}
+            >
+              <img
+                src={dnftImageUrl}
+                alt="dNFT Passport"
+                style={{
+                  width: "100%",
+                  maxWidth: "420px",
+                  borderRadius: "16px",
+                  display: "block",
+                  margin: "0 auto",
+                }}
+              />
+            </div>
+          ) : (
+            <div
+              style={{
+                height: "420px",
+                borderRadius: "16px",
+                border: `2px dashed ${passportDesign.borderColor}`,
+                backgroundColor: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto",
+                color: "#64748b",
+                fontWeight: "bold",
+              }}
+            >
+              OC Passport Image
+            </div>
+          )}
+
+          <div
             style={{
-              border: `4px solid ${passportDesign.borderColor}`,
-              backgroundColor: passportDesign.backgroundColor,
-              borderRadius: "24px",
-              padding: "24px",
-              boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
+              textAlign: "center",
+              marginTop: "-48px",
             }}
           >
-            <div style={{ textAlign: "center" }}>
-              <span
-                style={{
-                  display: "inline-block",
-                  padding: "8px 16px",
-                  borderRadius: "999px",
-                  backgroundColor: passportDesign.badgeColor,
-                  color: "#ffffff",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                }}
-              >
-                {passportDesign.label}
-              </span>
+            <h2
+              style={{
+                margin: "0 0 4px",
+                color: passportDesign.borderColor,
+                fontSize: "24px",
+              }}
+            >
+              {passportDesign.title}
+            </h2>
 
-              <h2 style={{ margin: "18px 0 4px", color: "#0f172a" }}>
-                OC Passport
-              </h2>
-              <h3 style={{ margin: 0, color: passportDesign.badgeColor }}>
-                {passportDesign.title}
-              </h3>
-            </div>
-
-            {dnftImageUrl ? (
-              <div style={{ textAlign: "center", margin: "22px 0" }}>
-                <img
-                  src={dnftImageUrl}
-                  alt="dNFT Passport"
-                  style={{
-                    width: "260px",
-                    maxWidth: "100%",
-                    borderRadius: "16px",
-                    border: `2px solid ${passportDesign.borderColor}`,
-                    backgroundColor: "#ffffff",
-                  }}
-                />
-              </div>
-            ) : (
-              <div
-                style={{
-                  height: "180px",
-                  borderRadius: "16px",
-                  border: `2px dashed ${passportDesign.borderColor}`,
-                  backgroundColor: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "22px 0",
-                  color: "#64748b",
-                  fontWeight: "bold",
-                }}
-              >
-                OC Passport Image
-              </div>
-            )}
+            <p
+              style={{
+                margin: "0",
+                fontSize: "16px",
+                fontWeight: "bold",
+                color: "#0f172a",
+              }}
+            >
+              {passportDesign.label}
+            </p>
 
             <div
               style={{
-                backgroundColor: "rgba(255,255,255,0.75)",
-                borderRadius: "16px",
-                padding: "16px",
-                border: "1px solid rgba(148,163,184,0.35)",
+                margin: "18px auto 8px",
+                maxWidth: "260px",
               }}
             >
-              <p style={{ margin: "0 0 8px" }}>
-                <strong>NFT ID：</strong>
-                {passport.nft?.nftId}
-              </p>
-              <p style={{ margin: "0 0 8px" }}>
-                <strong>現在のLevel：</strong>
-                {passportDesign.level}
-              </p>
-              <p style={{ margin: "0 0 8px" }}>
-                <strong>取得スタンプ：</strong>
-                {stampCount}
-              </p>
-              <p style={{ margin: 0, color: "#475569", fontSize: "14px" }}>
-                {passportDesign.description}
+              <div
+                style={{
+                  height: "6px",
+                  backgroundColor: "#e5e7eb",
+                  borderRadius: "999px",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${
+                      totalSpotCount > 0
+                        ? (stampCount / totalSpotCount) * 100
+                        : 0
+                    }%`,
+                    backgroundColor: passportDesign.borderColor,
+                    borderRadius: "999px",
+                  }}
+                />
+              </div>
+
+              <p
+                style={{
+                  margin: "8px 0 0",
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  color: passportDesign.borderColor,
+                }}
+              >
+                {stampCount} / {totalSpotCount} Stamp
               </p>
             </div>
-          </section>
+
+            <p style={{ margin: "12px 0 0", fontSize: "14px" }}>
+              {passportDesign.description}
+            </p>
+          </div>
+        </section>
 
           <main style={{ display: "grid", gap: "18px" }}>
             <section
