@@ -1,6 +1,97 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+async function canAccessRoom({
+  userId,
+  roomId,
+}: {
+  userId: number;
+  roomId: number;
+}) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      nft: true,
+    },
+  });
+
+  if (!user || !user.nft) {
+    return {
+      ok: false,
+      status: 404,
+      message: "ユーザー情報が見つかりません",
+      user: null,
+      room: null,
+    };
+  }
+
+  if (user.nft.level < 1 && !user.isAdmin) {
+    return {
+      ok: false,
+      status: 403,
+      message: "チャットはLevel 1以上で利用できます",
+      user,
+      room: null,
+    };
+  }
+
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: roomId },
+    include: {
+      spot: true,
+    },
+  });
+
+  if (!room) {
+    return {
+      ok: false,
+      status: 404,
+      message: "チャットルームが見つかりません",
+      user,
+      room: null,
+    };
+  }
+
+  if (room.roomType === "spot") {
+    if (!room.spotId) {
+      return {
+        ok: false,
+        status: 400,
+        message: "研究室チャットの設定が不正です",
+        user,
+        room,
+      };
+    }
+
+    const visited = await prisma.stampLog.findUnique({
+      where: {
+        userId_spotId: {
+          userId,
+          spotId: room.spotId,
+        },
+      },
+    });
+
+    if (!visited && !user.isAdmin) {
+      return {
+        ok: false,
+        status: 403,
+        message: "この研究室を訪問した参加者のみ利用できます",
+        user,
+        room,
+      };
+    }
+  }
+
+  return {
+    ok: true,
+    status: 200,
+    message: "OK",
+    user,
+    room,
+  };
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -14,35 +105,12 @@ export async function GET(req: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        nft: true,
-      },
-    });
+    const access = await canAccessRoom({ userId, roomId });
 
-    if (!user || !user.nft) {
+    if (!access.ok) {
       return NextResponse.json(
-        { message: "ユーザー情報が見つかりません" },
-        { status: 404 }
-      );
-    }
-
-    if (user.nft.level < 1 && !user.isAdmin) {
-      return NextResponse.json(
-        { message: "チャットはLevel 1以上で利用できます" },
-        { status: 403 }
-      );
-    }
-
-    const room = await prisma.chatRoom.findUnique({
-      where: { id: roomId },
-    });
-
-    if (!room) {
-      return NextResponse.json(
-        { message: "チャットルームが見つかりません" },
-        { status: 404 }
+        { message: access.message },
+        { status: access.status }
       );
     }
 
@@ -65,7 +133,7 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({
-      room,
+      room: access.room,
       messages,
     });
   } catch (error) {
@@ -106,35 +174,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userIdNumber },
-      include: {
-        nft: true,
-      },
+    const access = await canAccessRoom({
+      userId: userIdNumber,
+      roomId: roomIdNumber,
     });
 
-    if (!user || !user.nft) {
+    if (!access.ok) {
       return NextResponse.json(
-        { message: "ユーザー情報が見つかりません" },
-        { status: 404 }
-      );
-    }
-
-    if (user.nft.level < 1 && !user.isAdmin) {
-      return NextResponse.json(
-        { message: "チャット投稿はLevel 1以上で利用できます" },
-        { status: 403 }
-      );
-    }
-
-    const room = await prisma.chatRoom.findUnique({
-      where: { id: roomIdNumber },
-    });
-
-    if (!room) {
-      return NextResponse.json(
-        { message: "チャットルームが見つかりません" },
-        { status: 404 }
+        { message: access.message },
+        { status: access.status }
       );
     }
 

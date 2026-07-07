@@ -8,6 +8,12 @@ type ChatRoom = {
   roomName: string;
   description: string | null;
   createdAt: string;
+  roomType: string;
+  spot: {
+    id: number;
+    spotName: string;
+    floor: string;
+  } | null;
   messages: {
     id: number;
   }[];
@@ -144,7 +150,14 @@ export default function ChatRoomsPage() {
             }}
           >
             {rooms.map((room) => {
-              const isProposalRoom = room.roomName.includes("議論");
+              const isProposalRoom = room.roomType === "proposal";
+              const isSpotRoom = room.roomType === "spot";
+
+              const label = isProposalRoom
+                ? "Proposal議論"
+                : isSpotRoom
+                ? "研究室チャット"
+                : "通常チャット";
 
               return (
                 <div
@@ -172,7 +185,7 @@ export default function ChatRoomsPage() {
                       marginBottom: "14px",
                     }}
                   >
-                    {isProposalRoom ? "Proposal議論" : "通常チャット"}
+                    {label}
                   </div>
 
                   <h2
