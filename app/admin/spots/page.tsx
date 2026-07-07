@@ -14,7 +14,23 @@ type Spot = {
   y: number;
   color: string;
   icon: string;
+  interestTag: string | null;
 };
+
+const interestTagOptions = [
+  "AI・機械学習",
+  "ゲーム",
+  "ロボット",
+  "情報セキュリティ",
+  "データサイエンス",
+  "音声・画像処理",
+  "人間・心理",
+  "生体認証",
+  "IoT・センシング",
+  "数理・シミュレーション",
+  "サービス・経営",
+  "Well-being・社会",
+];
 
 export default function AdminSpotsPage() {
   const router = useRouter();
@@ -27,6 +43,7 @@ export default function AdminSpotsPage() {
   const [y, setY] = useState(0);
   const [color, setColor] = useState("#93C5FD");
   const [icon, setIcon] = useState("📍");
+  const [interestTag, setInterestTag] = useState("");
 
   const [spots, setSpots] = useState<Spot[]>([]);
   const [qrImages, setQrImages] = useState<Record<number, string>>({});
@@ -75,6 +92,7 @@ export default function AdminSpotsPage() {
         y,
         color,
         icon,
+        interestTag,
       }),
     });
 
@@ -94,6 +112,7 @@ export default function AdminSpotsPage() {
     setY(0);
     setColor("#93C5FD");
     setIcon("📍");
+    setInterestTag("");
 
     fetchSpots();
   };
@@ -128,6 +147,24 @@ export default function AdminSpotsPage() {
           onChange={(e) => setFloor(e.target.value)}
           placeholder="6F"
         />
+      </div>
+
+      <br />
+
+      <div>
+        <label>興味タグ</label>
+        <br />
+        <select
+          value={interestTag}
+          onChange={(e) => setInterestTag(e.target.value)}
+        >
+          <option value="">選択してください</option>
+          {interestTagOptions.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag}
+            </option>
+          ))}
+        </select>
       </div>
 
       <br />
@@ -212,6 +249,7 @@ export default function AdminSpotsPage() {
         >
           <h3>{spot.spotName}</h3>
           <p>場所：{spot.floor}</p>
+          <p>興味タグ：{spot.interestTag ?? "未設定"}</p>
           <p>座標：x={spot.x}, y={spot.y}</p>
           <p>色：{spot.color}</p>
           <p>アイコン：{spot.icon}</p>
