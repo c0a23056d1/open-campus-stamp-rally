@@ -48,6 +48,14 @@ export async function POST(req: Request) {
       qrSecretCode,
     },
   });
+  await prisma.chatRoom.create({
+    data: {
+      roomName: `${spot.floor} ${spot.spotName} コミュニティ`,
+      description: `${spot.spotName}を訪問した参加者が交流できるチャットです。`,
+      roomType: "spot",
+      spotId: spot.id,
+    },
+  });
 
   return NextResponse.json({
     message: "スポットを登録しました",

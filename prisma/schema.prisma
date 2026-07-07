@@ -69,6 +69,7 @@ model Spot {
   qrSecretCode  String   @unique
 
   stampLogs     StampLog[]
+  chatRooms     ChatRoom[]
 }
 
 model StampLog {
@@ -87,8 +88,11 @@ model ChatRoom {
   id          Int      @id @default(autoincrement())
   roomName    String
   description String?
+  roomType    String   @default("general")
+  spotId      Int?
   createdAt   DateTime @default(now())
 
+  spot      Spot?         @relation(fields: [spotId], references: [id])   
   messages ChatMessage[]
   proposals Proposal[]
 }

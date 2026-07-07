@@ -17,6 +17,7 @@ export async function GET(req: Request) {
       where: { id: userId },
       include: {
         nft: true,
+        stampLogs: true,
       },
     });
 
@@ -34,7 +35,24 @@ export async function GET(req: Request) {
       );
     }
 
+    const visitedSpotIds = user.stampLogs.map((log) => log.spotId);
+
     const rooms = await prisma.chatRoom.findMany({
+      where: {
+        OR: [
+          {
+            roomType: {
+              in: ["general", "proposal"],
+            },
+          },
+          {
+            roomType: "spot",
+            spotId: {
+              in: visitedSpotIds,
+            },
+          },
+        ],
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -44,6 +62,7 @@ export async function GET(req: Request) {
             isDeleted: false,
           },
         },
+        spot: true,
       },
     });
 
