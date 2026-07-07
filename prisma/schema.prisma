@@ -25,6 +25,7 @@ model User {
   votes        Vote[]
 
   createdProposals Proposal[] @relation("ProposalCreator")
+  loginHistories LoginHistory[]
 }
 
 model Wallet {
@@ -164,4 +165,12 @@ model Vote {
   user     User           @relation(fields: [userId], references: [id])
 
   @@unique([proposalId, userId])
+}
+
+model LoginHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  loginAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -38,8 +38,33 @@ export async function GET(req: Request) {
         messages: true,
         votes: true,
         createdProposals: true,
+        loginHistories: true,
       },
     });
+
+    const now = new Date();
+
+    const daysAgo = (days: number) => {
+      const date = new Date(now);
+      date.setDate(date.getDate() - days);
+      return date;
+    };
+
+    const activeAfterDays = (days: number) => {
+      const targetDate = daysAgo(days);
+
+      return users.filter((user) => 
+          user.loginHistories.some((history) => history.loginAt >= targetDate)
+      ).length;
+    };
+
+    const active7Days = activeAfterDays(7);
+    const active14Days = activeAfterDays(14);
+    const active30Days = activeAfterDays(30);
+
+    const usersWithLoginHistory = users.filter(
+      (user) => user.loginHistories.length > 0
+    ).length;
 
     const spots = await prisma.spot.findMany({
       include: {
@@ -219,6 +244,18 @@ export async function GET(req: Request) {
       level: {
         levelDistribution,
         levelActivity,
+      },
+      continuity: {
+        usersWithLoginHistory,
+        active7Days,
+        active14Days,
+        active30Days,
+        active7DaysRate:
+          totalUsers === 0 ? 0 : Math.round((active7Days / totalUsers) * 100),
+        active14DaysRate:
+          totalUsers === 0 ? 0 : Math.round((active14Days / totalUsers) * 100),
+        active30DaysRate:
+          totalUsers === 0 ? 0 : Math.round((active30Days / totalUsers) * 100),
       },
     });
   } catch (error) {
