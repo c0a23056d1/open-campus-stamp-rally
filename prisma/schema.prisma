@@ -76,6 +76,8 @@ model Spot {
   color         String   @default("#93C5FD")
   icon          String   @default("📍")
 
+  interestTag   String?
+
   stampLogs     StampLog[]
   chatRooms     ChatRoom[]
 }
