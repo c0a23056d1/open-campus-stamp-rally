@@ -11,14 +11,16 @@ type Spot = {
 };
 
 export type RenderPassportSvgProps = {
-    level: number;
-    title: string;
-    stampCount: number;
-
-    spots: Spot[];
-    visitedSpots: string[];
-
-    interestTags: string[];
+  level: number;
+  title: string;
+  stampCount: number;
+  spots: Spot[];
+  visitedSpots: string[];
+  interestTags: string[];
+  favoriteLabs: {
+    spotName: string;
+    rating: number;
+  }[];
 };
 
 function getLevelColor(level: number) {

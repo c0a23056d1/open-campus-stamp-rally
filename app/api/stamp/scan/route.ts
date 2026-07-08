@@ -140,6 +140,28 @@ console.log(
     }
 
 
+    const favoriteLabs = await prisma.spotRating.findMany({
+      where: {
+        userId: userIdNumber,
+      },
+      include: {
+        spot: true,
+      },
+      orderBy: [
+        {
+          rating: "desc",
+        },
+        {
+          updatedAt: "desc",
+        },
+      ],
+      take: 3,
+    });
+    const favoriteLabsForDnft = favoriteLabs.map((item) => ({
+      spotName: item.spot.spotName,
+      rating: item.rating,
+    }));
+
     const pngBuffer = await generatePassportPng({
       level,
       title,
@@ -147,8 +169,8 @@ console.log(
       spots,
       visitedSpots,
       interestTags: topInterestTags,
-    })
-
+      favoriteLabs: favoriteLabsForDnft,
+    });
     const cid = await uploadPngToPinata(
       pngBuffer,
       `${currentNft.nftId}-level-${level}-${level}-${Date.now()}.png`

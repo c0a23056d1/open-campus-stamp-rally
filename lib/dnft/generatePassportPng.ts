@@ -18,9 +18,11 @@ export async function generatePassportPng(
 
   const basePngBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
 
+  const levelColor = getLevelColor(props.level);
+
   const interestTagPng = await generateInterestTagPng(
     props.interestTags,
-    getLevelColor(props.level)
+    levelColor
   );
 
   if (!interestTagPng) {
