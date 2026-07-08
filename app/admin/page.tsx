@@ -74,6 +74,11 @@ export default function AdminPage() {
       description: "スポット別訪問数や参加者の回遊状況を確認します。（未実装）",
       path: "/admin/analytics",
     },
+    {
+      title: "アンケート分析",
+      description: "アンケート結果の集計・分析を行います",
+      path: "/admin/survey",
+    },
   ];
 
   return (
