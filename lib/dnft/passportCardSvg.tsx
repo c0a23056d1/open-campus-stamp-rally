@@ -16,6 +16,7 @@ type PassportCardSvgProps = {
     stampCount: number;
     spots: Spot[];
     visitedSpots: string[];
+    interestTags: string[];
 };
 
 function getLevelColor(level: number) {
@@ -33,6 +34,7 @@ export function PassportCardSvg({
     stampCount,
     spots,
     visitedSpots,
+    interestTags,
 }: PassportCardSvgProps) {
     const levelColor = getLevelColor(level);
 

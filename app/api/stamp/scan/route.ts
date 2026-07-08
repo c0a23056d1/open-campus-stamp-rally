@@ -77,8 +77,54 @@ export async function POST(req: Request) {
         visitedAt: "asc",
       },
     });
+ 
+  const visitedSpots = stampLogs.map((log) => log.spot.spotName);
 
-    const visitedSpots = stampLogs.map((log) => log.spot.spotName);
+  const interestTags = stampLogs
+    .map((log) => log.spot.interestTag)
+    .filter(
+      (tag): tag is string =>
+        tag !== null &&
+        tag !== undefined &&
+        tag !== ""
+    );
+
+  const interestTagCounts = interestTags.reduce<Record<string, number>>(
+    (acc, tag) => {
+      acc[tag] = (acc[tag] ?? 0) + 1;
+      return acc;
+    },
+    {}
+  );
+
+  const topInterestTags = Object.entries(interestTagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([tag]) => tag)
+    .slice(0, 3);
+
+  const spots = await prisma.spot.findMany({
+    select: {
+      spotName: true,
+      floor: true,
+      x: true,
+      y: true,
+      color: true,
+      icon: true,
+    },
+    orderBy: {
+      id: "asc",
+    },
+  });
+
+console.log("興味タグ", topInterestTags);
+console.log("visitedSpots", visitedSpots);
+console.log(
+  "spots",
+  spots.map((s) => s.spotName)
+);
+    
+      
+    
 
     const currentNft = await prisma.nFT.findUnique({
       where: {
@@ -93,19 +139,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const spots = await prisma.spot.findMany({
-      select: {
-        spotName: true,
-        floor: true,
-        x: true,
-        y: true,
-        color: true,
-        icon: true,
-      },
-      orderBy: {
-        id: "asc",
-      },
-    });
 
     const pngBuffer = await generatePassportPng({
       level,
@@ -113,6 +146,7 @@ export async function POST(req: Request) {
       stampCount,
       spots,
       visitedSpots,
+      interestTags: topInterestTags,
     })
 
     const cid = await uploadPngToPinata(
