@@ -26,6 +26,12 @@ export async function POST(req: Request) {
       );
     }
 
+    await prisma.loginHistory.create({
+      data: {
+        userId: user.id,
+      },
+    });
+
     return NextResponse.json({
       message: "ログイン成功",
       userId: user.id,

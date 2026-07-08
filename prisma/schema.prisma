@@ -25,6 +25,8 @@ model User {
   votes        Vote[]
 
   createdProposals Proposal[] @relation("ProposalCreator")
+  loginHistories LoginHistory[]
+  chatReactions ChatReaction[]
 }
 
 model Wallet {
@@ -112,8 +114,13 @@ model ChatMessage {
   isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
 
+  replyToMessageId  Int?
+  replyToMessage    ChatMessage?  @relation("MessageReplies", fields: [replyToMessageId], references: [id])
+  replies          ChatMessage[] @relation("MessageReplies")
+
   room ChatRoom @relation(fields: [roomId], references: [id])
   user User     @relation(fields: [userId], references: [id])
+  reactions   ChatReaction[]
 }
 
 model Proposal {
@@ -166,4 +173,25 @@ model Vote {
   user     User           @relation(fields: [userId], references: [id])
 
   @@unique([proposalId, userId])
+}
+
+model LoginHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  loginAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChatReaction {
+  id        Int      @id @default(autoincrement())
+  messageId Int
+  userId    Int
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
 }
