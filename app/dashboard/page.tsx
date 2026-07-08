@@ -22,6 +22,7 @@ type PassportData = {
   } | null;
   stamps: {
     id: number;
+    spotId: number;
     visitedAt: string;
     spotName: string;
     floor: string;
@@ -30,12 +31,19 @@ type PassportData = {
     spotName: string;
     floor: string;
   }[];
+  spotRatings: {
+    id: number;
+    spotId: number;
+    rating: number;
+    comment: string | null;
+  }[];
 };
+
 
 export default function DashboardPage() {
   const [passport, setPassport] = useState<PassportData | null>(null);
   const router = useRouter();
-
+  const [ratings, setRatings] = useState<Record<number, number>>({});
   useEffect(() => {
     const userId = localStorage.getItem("userId");
 
@@ -64,7 +72,35 @@ export default function DashboardPage() {
     localStorage.clear();
     router.push("/login");
   };
+  const handleRating = async (spotId: number, rating: number) => {
+    const userId = localStorage.getItem("userId");
 
+    const res = await fetch("/api/spot-ratings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        spotId,
+        rating,
+      }),
+    });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.message);
+    return;
+  }
+
+  setRatings((prev) => ({
+    ...prev,
+    [spotId]: rating,
+  }));
+
+  alert("評価を保存しました！");
+};
   if (!passport) {
     return (
       <div style={{ padding: "24px", backgroundColor: "#f8fafc" }}>
@@ -261,7 +297,6 @@ export default function DashboardPage() {
               OC Passport Image
             </div>
           )}
-
           <div
             style={{
               textAlign: "center",
@@ -440,27 +475,63 @@ export default function DashboardPage() {
                 </p>
               ) : (
                 <div style={{ display: "grid", gap: "10px" }}>
-                  {passport.stamps.map((stamp) => (
-                    <div
-                      key={stamp.id}
-                      style={{
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "14px",
-                        padding: "12px 14px",
-                        backgroundColor: "#f8fafc",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: "12px",
-                      }}
-                    >
-                      <span>
-                        <strong>{stamp.floor}</strong>：{stamp.spotName}
-                      </span>
-                      <span style={{ color: "#64748b", fontSize: "13px" }}>
-                        {new Date(stamp.visitedAt).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+                  {passport.stamps.map((stamp) => {
+                    const savedRating =
+                      ratings[stamp.spotId] ??
+                      passport.spotRatings.find((r) => r.spotId === stamp.spotId)?.rating ??
+                      0;
+
+                    return (
+                      <div
+                        key={stamp.id}
+                        style={{
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "14px",
+                          padding: "12px 14px",
+                          backgroundColor: "#f8fafc",
+                          marginBottom: "12px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginBottom: "8px",
+                          }}
+                        >
+                          <span>
+                            <strong>{stamp.floor}</strong>：{stamp.spotName}
+                          </span>
+
+                          <span
+                            style={{
+                              color: "#64748b",
+                              fontSize: "13px",
+                            }}
+                          >
+                            {new Date(stamp.visitedAt).toLocaleString()}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: "24px" }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                              key={star}
+                              onClick={() => handleRating(stamp.spotId, star)}
+                              style={{
+                                cursor: "pointer",
+                                color: star <= savedRating ? "#f59e0b" : "#d1d5db",
+                                marginRight: "4px",
+                              }}
+                            >
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
                 </div>
               )}
             </section>
