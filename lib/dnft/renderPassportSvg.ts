@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+
 type Spot = {
   spotName: string;
   floor: string;
@@ -8,11 +11,14 @@ type Spot = {
 };
 
 export type RenderPassportSvgProps = {
-  level: number;
-  title: string;
-  stampCount: number;
-  spots: Spot[];
-  visitedSpots: string[];
+    level: number;
+    title: string;
+    stampCount: number;
+
+    spots: Spot[];
+    visitedSpots: string[];
+
+    interestTags: string[];
 };
 
 function getLevelColor(level: number) {
@@ -47,7 +53,34 @@ function escapeXml(value: string) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
 }
+function getNotoSansJpBase64() {
+  const fontPath = path.join(
+    process.cwd(),
+    "public",
+    "fonts",
+    "NotoSansJP-Regular.ttf"
+  );
 
+  return fs.readFileSync(fontPath).toString("base64");
+}
+function getInterestTagLabel(tag: string) {
+  const labels: Record<string, string> = {
+    "AI・機械学習": "AI",
+    "ゲーム": "ゲーム",
+    "ロボット": "ロボット",
+    "情報セキュリティ": "情報セキュリティ",
+    "データサイエンス": "データサイエンス",
+    "音声・画像処理": "音声・画像処理",
+    "人間・心理": "人間・心理",
+    "生体認証": "生体認証",
+    "IoT・センシング": "IoT",
+    "数理・シミュレーション": "数理・シミュレーション",
+    "サービス・経営": "サービス・経営",
+    "Well-being・社会": "Well-being",
+  };
+
+  return labels[tag] ?? tag;
+}
 function renderOuterFrame(stroke: string) {
   return `
     <rect x="10" y="10" width="300" height="400" rx="18"
@@ -259,6 +292,7 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
 
   const spotsSvg = props.spots
     .map((spot) => {
+      
       const isVisited = props.visitedSpots.includes(spot.spotName);
 
       let fillcolor = "#f3f4f6";
@@ -291,7 +325,7 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
       `;
     })
     .join("");
-
+  
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg
   width="320"
@@ -299,14 +333,14 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
   viewBox="0 0 320 460"
   xmlns="http://www.w3.org/2000/svg"
 >
-  <defs>
-    <linearGradient id="lv4Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3b82f6" />
-      <stop offset="35%" stop-color="#8b5cf6" />
-      <stop offset="70%" stop-color="#ec4899" />
-      <stop offset="100%" stop-color="#f59e0b" />
-    </linearGradient>
-  </defs>
+<defs>
+  <linearGradient id="lv4Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#3b82f6" />
+    <stop offset="35%" stop-color="#8b5cf6" />
+    <stop offset="70%" stop-color="#ec4899" />
+    <stop offset="100%" stop-color="#f59e0b" />
+  </linearGradient>
+</defs>
 
   ${renderFrame(props.level)}
 
@@ -333,6 +367,7 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
     ${spotsSvg}
   </g>
 
+  
   <text x="160" y="370" text-anchor="middle" font-size="18" font-weight="bold" fill="${levelColor}">
     ${props.stampCount} Stamp
   </text>

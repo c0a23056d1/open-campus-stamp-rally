@@ -19,7 +19,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sharp": "^0.35.2",
-    "symbol-sdk": "^3.3.2"
+    "symbol-sdk": "^3.3.2",
+    "text-to-svg": "^3.1.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
