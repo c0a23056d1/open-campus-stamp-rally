@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-
 type Spot = {
   spotName: string;
   floor: string;
@@ -11,14 +8,16 @@ type Spot = {
 };
 
 export type RenderPassportSvgProps = {
-    level: number;
-    title: string;
-    stampCount: number;
-
-    spots: Spot[];
-    visitedSpots: string[];
-
-    interestTags: string[];
+  level: number;
+  title: string;
+  stampCount: number;
+  spots: Spot[];
+  visitedSpots: string[];
+  interestTags: string[];
+  favoriteLabs: {
+    spotName: string;
+    rating: number;
+  }[];
 };
 
 function getLevelColor(level: number) {
@@ -53,29 +52,21 @@ function escapeXml(value: string) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
 }
-function getNotoSansJpBase64() {
-  const fontPath = path.join(
-    process.cwd(),
-    "public",
-    "fonts",
-    "NotoSansJP-Regular.ttf"
-  );
 
-  return fs.readFileSync(fontPath).toString("base64");
-}
-function getInterestTagLabel(tag: string) {
+function getInterestTagEnglish(tag: string) {
   const labels: Record<string, string> = {
+    "AI": "AI",
     "AI・機械学習": "AI",
-    "ゲーム": "ゲーム",
-    "ロボット": "ロボット",
-    "情報セキュリティ": "情報セキュリティ",
-    "データサイエンス": "データサイエンス",
-    "音声・画像処理": "音声・画像処理",
-    "人間・心理": "人間・心理",
-    "生体認証": "生体認証",
+    "ゲーム": "Game",
+    "ロボット": "Robot",
+    "情報セキュリティ": "Security",
+    "データサイエンス": "Data",
+    "音声・画像処理": "Media",
+    "人間・心理": "Human",
+    "生体認証": "Biometrics",
     "IoT・センシング": "IoT",
-    "数理・シミュレーション": "数理・シミュレーション",
-    "サービス・経営": "サービス・経営",
+    "数理・シミュレーション": "Simulation",
+    "サービス・経営": "Service",
     "Well-being・社会": "Well-being",
   };
 
@@ -367,10 +358,45 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
     ${spotsSvg}
   </g>
 
-  
-  <text x="160" y="370" text-anchor="middle" font-size="18" font-weight="bold" fill="${levelColor}">
+  <text
+    x="160"
+    y="338"
+    text-anchor="middle"
+    font-size="11"
+    font-weight="bold"
+    fill="#374151"
+  >
+    Interest Tags
+  </text>
+
+  <text
+    x="160"
+    y="354"
+    text-anchor="middle"
+    font-size="11"
+    font-weight="bold"
+    fill="${levelColor}"
+  >
+    ${escapeXml(
+      props.interestTags
+        .slice(0, 3)
+        .map(getInterestTagEnglish)
+        .join(" / ")
+    )}
+  </text>
+
+  <text
+    x="160"
+    y="375"
+    text-anchor="middle"
+    font-size="18"
+    font-weight="bold"
+    fill="${levelColor}"
+  >
     ${props.stampCount} Stamp
   </text>
+
+  
 
   ${renderBottomEmblem(levelColor, medalIcon)}
 </svg>`;

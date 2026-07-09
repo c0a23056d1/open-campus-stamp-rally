@@ -147,8 +147,8 @@ console.log(
       spots,
       visitedSpots,
       interestTags: topInterestTags,
-    })
-
+      favoriteLabs: [],
+    });
     const cid = await uploadPngToPinata(
       pngBuffer,
       `${currentNft.nftId}-level-${level}-${level}-${Date.now()}.png`
@@ -162,6 +162,7 @@ console.log(
       title,
       stampCount,
       visitedSpots,
+      interestTags: topInterestTags,
       imageUrl,
     });
 
