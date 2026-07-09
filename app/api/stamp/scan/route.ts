@@ -169,7 +169,7 @@ console.log(
       spots,
       visitedSpots,
       interestTags: topInterestTags,
-      favoriteLabs: favoriteLabsForDnft,
+      favoriteLabs: [],
     });
     const cid = await uploadPngToPinata(
       pngBuffer,
@@ -184,6 +184,7 @@ console.log(
       title,
       stampCount,
       visitedSpots,
+      interestTags: topInterestTags,
       imageUrl,
     });
 
