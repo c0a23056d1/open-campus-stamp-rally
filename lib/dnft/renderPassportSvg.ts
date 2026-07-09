@@ -13,7 +13,11 @@ export type RenderPassportSvgProps = {
   stampCount: number;
   spots: Spot[];
   visitedSpots: string[];
-  
+  interestTags: string[];
+  favoriteLabs: {
+    spotName: string;
+    rating: number;
+  }[];
 };
 
 function getLevelColor(level: number) {
@@ -49,7 +53,25 @@ function escapeXml(value: string) {
     .replaceAll("'", "&apos;");
 }
 
+function getInterestTagEnglish(tag: string) {
+  const labels: Record<string, string> = {
+    "AI": "AI",
+    "AI・機械学習": "AI",
+    "ゲーム": "Game",
+    "ロボット": "Robot",
+    "情報セキュリティ": "Security",
+    "データサイエンス": "Data",
+    "音声・画像処理": "Media",
+    "人間・心理": "Human",
+    "生体認証": "Biometrics",
+    "IoT・センシング": "IoT",
+    "数理・シミュレーション": "Simulation",
+    "サービス・経営": "Service",
+    "Well-being・社会": "Well-being",
+  };
 
+  return labels[tag] ?? tag;
+}
 function renderOuterFrame(stroke: string) {
   return `
     <rect x="10" y="10" width="300" height="400" rx="18"
@@ -336,10 +358,45 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
     ${spotsSvg}
   </g>
 
-  
-  <text x="160" y="370" text-anchor="middle" font-size="18" font-weight="bold" fill="${levelColor}">
+  <text
+    x="160"
+    y="338"
+    text-anchor="middle"
+    font-size="11"
+    font-weight="bold"
+    fill="#374151"
+  >
+    Interest Tags
+  </text>
+
+  <text
+    x="160"
+    y="354"
+    text-anchor="middle"
+    font-size="11"
+    font-weight="bold"
+    fill="${levelColor}"
+  >
+    ${escapeXml(
+      props.interestTags
+        .slice(0, 3)
+        .map(getInterestTagEnglish)
+        .join(" / ")
+    )}
+  </text>
+
+  <text
+    x="160"
+    y="375"
+    text-anchor="middle"
+    font-size="18"
+    font-weight="bold"
+    fill="${levelColor}"
+  >
     ${props.stampCount} Stamp
   </text>
+
+  
 
   ${renderBottomEmblem(levelColor, medalIcon)}
 </svg>`;
