@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-
 type Spot = {
   spotName: string;
   floor: string;
@@ -11,14 +8,12 @@ type Spot = {
 };
 
 export type RenderPassportSvgProps = {
-    level: number;
-    title: string;
-    stampCount: number;
-
-    spots: Spot[];
-    visitedSpots: string[];
-
-    interestTags: string[];
+  level: number;
+  title: string;
+  stampCount: number;
+  spots: Spot[];
+  visitedSpots: string[];
+  
 };
 
 function getLevelColor(level: number) {
@@ -53,34 +48,8 @@ function escapeXml(value: string) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
 }
-function getNotoSansJpBase64() {
-  const fontPath = path.join(
-    process.cwd(),
-    "public",
-    "fonts",
-    "NotoSansJP-Regular.ttf"
-  );
 
-  return fs.readFileSync(fontPath).toString("base64");
-}
-function getInterestTagLabel(tag: string) {
-  const labels: Record<string, string> = {
-    "AI・機械学習": "AI",
-    "ゲーム": "ゲーム",
-    "ロボット": "ロボット",
-    "情報セキュリティ": "情報セキュリティ",
-    "データサイエンス": "データサイエンス",
-    "音声・画像処理": "音声・画像処理",
-    "人間・心理": "人間・心理",
-    "生体認証": "生体認証",
-    "IoT・センシング": "IoT",
-    "数理・シミュレーション": "数理・シミュレーション",
-    "サービス・経営": "サービス・経営",
-    "Well-being・社会": "Well-being",
-  };
 
-  return labels[tag] ?? tag;
-}
 function renderOuterFrame(stroke: string) {
   return `
     <rect x="10" y="10" width="300" height="400" rx="18"
