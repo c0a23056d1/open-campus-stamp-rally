@@ -358,11 +358,44 @@ export default function DashboardPage() {
                   QRスタンプ取得
                 </button>
                 <button style={styles.secondaryButton} onClick={() => router.push("/proposals")}>
-                  DAO投票
+                  投票画面
                 </button>
                 <button style={styles.secondaryButton} onClick={() => router.push("/chat")}>
                   チャット
                 </button>
+                <br />
+                <div
+                  style={{
+                    marginTop: "24px",
+                    padding: "18px",
+                    backgroundColor: "#ecfeff",
+                    border: "1px solid #67e8f9",
+                    borderRadius: "16px",
+                  }}
+                >
+                  <h3 style={{ marginTop: 0 }}>オープンキャンパスアンケート</h3>
+
+                  <p style={{ color: "#475569", lineHeight: 1.7 }}>
+                    ご利用ありがとうございました。
+                    アプリやオープンキャンパスについてのアンケートにご協力ください。
+                    回答内容は今後のイベント改善や研究目的で利用します。
+                  </p>
+
+                  <button
+                    onClick={() => router.push("/survey")}
+                    style={{
+                      padding: "10px 18px",
+                      borderRadius: "999px",
+                      border: "none",
+                      backgroundColor: "#10b981",
+                      color: "#fff",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                    }}
+                  >
+                    アンケートに回答する
+                  </button>
+                </div>
               </div>
             </section>
 
