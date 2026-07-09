@@ -79,7 +79,8 @@ model Spot {
   icon  String @default("📍")
 
   interestTag String?
-
+  ratingDisplayName String?
+  
   stampLogs   StampLog[]
   chatRooms   ChatRoom[]
   spotRatings SpotRating[]

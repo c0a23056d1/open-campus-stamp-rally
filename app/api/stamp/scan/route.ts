@@ -110,6 +110,7 @@ export async function POST(req: Request) {
       y: true,
       color: true,
       icon: true,
+      ratingDisplayName: true,
     },
     orderBy: {
       id: "asc",
@@ -158,7 +159,9 @@ console.log(
       take: 3,
     });
     const favoriteLabsForDnft = favoriteLabs.map((item) => ({
-      spotName: item.spot.spotName,
+      spotName:
+        item.spot.ratingDisplayName ??
+        item.spot.spotName,
       rating: item.rating,
     }));
 
@@ -169,7 +172,7 @@ console.log(
       spots,
       visitedSpots,
       interestTags: topInterestTags,
-      favoriteLabs: [],
+      favoriteLabs: favoriteLabsForDnft,
     });
     const cid = await uploadPngToPinata(
       pngBuffer,
@@ -185,6 +188,7 @@ console.log(
       stampCount,
       visitedSpots,
       interestTags: topInterestTags,
+      favoriteLabs: favoriteLabsForDnft,
       imageUrl,
     });
 

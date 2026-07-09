@@ -72,9 +72,14 @@ function getInterestTagEnglish(tag: string) {
 
   return labels[tag] ?? tag;
 }
+
+function renderStars(rating: number) {
+  return "★".repeat(rating) + "☆".repeat(5 - rating);
+}
+
 function renderOuterFrame(stroke: string) {
   return `
-    <rect x="10" y="10" width="300" height="400" rx="18"
+    <rect x="10" y="10" width="300" height="480" rx="18"
       fill="#ffffff" stroke="${stroke}" stroke-width="5" />
   `;
 }
@@ -104,7 +109,7 @@ function renderCornerDecoration(stroke: string) {
 
 function renderBottomEmblem(stroke: string, icon: string) {
   const cx = 260;
-  const cy = 360;
+  const cy = 490;
 
   return `
     <circle cx="${cx}" cy="${cy}" r="31" fill="none"
@@ -315,13 +320,40 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
         </g>
       `;
     })
-    .join("");
+
+  const favoriteLabsSvg = props.favoriteLabs
+  .map((lab, index) => {
+    const y = 385 + index * 16;
+
+    return `
+      <text
+        x="70"
+        y="${y}"
+        font-size="10"
+        font-weight="bold"
+        fill="${levelColor}"
+      >
+        ${renderStars(lab.rating)}
+      </text>
+
+      <text
+        x="150"
+        y="${y}"
+        font-size="10"
+        fill="#374151"
+      >
+        ${escapeXml(lab.spotName)}
+      </text>
+    `;
+  })
+  .join("");
   
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg
+
+  <svg
   width="320"
-  height="460"
-  viewBox="0 0 320 460"
+  height="620"
+  viewBox="0 0 320 620"
   xmlns="http://www.w3.org/2000/svg"
 >
 <defs>
@@ -384,10 +416,22 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
         .join(" / ")
     )}
   </text>
+    <text
+    x="160"
+    y="372"
+    text-anchor="middle"
+    font-size="11"
+    font-weight="bold"
+    fill="#374151"
+  >
+    Favorite Labs
+  </text>
+
+  ${favoriteLabsSvg}
 
   <text
     x="160"
-    y="375"
+    y="445"
     text-anchor="middle"
     font-size="18"
     font-weight="bold"
@@ -396,8 +440,6 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
     ${props.stampCount} Stamp
   </text>
 
-  
-
   ${renderBottomEmblem(levelColor, medalIcon)}
 </svg>`;
-}
+  }

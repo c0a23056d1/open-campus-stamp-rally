@@ -15,6 +15,7 @@ type Spot = {
   color: string;
   icon: string;
   interestTag: string | null;
+  ratingDisplayName: string | null;
 };
 
 const interestTagOptions = [
@@ -44,7 +45,7 @@ export default function AdminSpotsPage() {
   const [color, setColor] = useState("#93C5FD");
   const [icon, setIcon] = useState("📍");
   const [interestTag, setInterestTag] = useState("");
-
+  const [ratingDisplayName, setRatingDisplayName] = useState("");
   const [spots, setSpots] = useState<Spot[]>([]);
   const [qrImages, setQrImages] = useState<Record<number, string>>({});
 
@@ -93,6 +94,7 @@ export default function AdminSpotsPage() {
         color,
         icon,
         interestTag,
+        ratingDisplayName,
       }),
     });
 
@@ -113,7 +115,7 @@ export default function AdminSpotsPage() {
     setColor("#93C5FD");
     setIcon("📍");
     setInterestTag("");
-
+    setRatingDisplayName("");
     fetchSpots();
   };
 
@@ -169,7 +171,19 @@ export default function AdminSpotsPage() {
 
       <br />
 
-      <div>
+        <div>
+          <label>評価表示名</label>
+          <br />
+          <input
+            value={ratingDisplayName}
+            onChange={(e) => setRatingDisplayName(e.target.value)}
+            placeholder="A Lab"
+          />
+        </div>
+
+        <br />
+
+        <div>
         <label>X座標</label>
         <br />
         <input
@@ -255,7 +269,8 @@ export default function AdminSpotsPage() {
           <p>アイコン：{spot.icon}</p>
           <p>説明：{spot.description}</p>
           <p>QRコード内容：{spot.qrSecretCode}</p>
-
+          <p>評価表示名：{spot.ratingDisplayName ?? "未設定"}</p>
+          
           {qrImages[spot.id] && (
             <img
               src={qrImages[spot.id]}

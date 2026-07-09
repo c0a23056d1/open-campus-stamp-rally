@@ -6,6 +6,8 @@ export type DnftMetadataInput = {
   visitedSpots: string[];
   imageUrl?: string;
   interestTags: string[];
+  favoriteLabs: {spotName: string; rating: number;
+}[];
 };
 
 export function buildDnftMetadata({
@@ -16,6 +18,7 @@ export function buildDnftMetadata({
   visitedSpots,
   imageUrl,
   interestTags,
+  favoriteLabs,
 }: DnftMetadataInput) {
   return {
     name: `OC Passport Lv.${level}`,
@@ -26,6 +29,7 @@ export function buildDnftMetadata({
     stampCount,
     visitedSpots,
     interestTags,
+    favoriteLabs,
     attributes: [
       { trait_type: "NFT ID", value: nftId },
       { trait_type: "Level", value: level },
@@ -33,6 +37,7 @@ export function buildDnftMetadata({
       { trait_type: "Stamp Count", value: stampCount },
       { trait_type: "Visited Spots", value: visitedSpots },
       {trait_type: "Interest Tags",value: interestTags },
+      {trait_type: "Favorite Labs", value: favoriteLabs },
     ],
   };
 }

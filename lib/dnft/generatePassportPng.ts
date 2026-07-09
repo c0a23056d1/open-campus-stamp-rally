@@ -6,7 +6,5 @@ export async function generatePassportPng(
 ): Promise<Buffer> {
   const svg = renderPassportSvg(props);
 
-  return sharp(Buffer.from(svg))
-    .png()
-    .toBuffer();
+  return sharp(Buffer.from(svg)).png().toBuffer();
 }
