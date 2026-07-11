@@ -6,7 +6,7 @@ export type DnftMetadataInput = {
   visitedSpots: string[];
   imageUrl?: string;
   interestTags: string[];
-  favoriteLabs: {spotName: string; rating: number;
+  favoriteLabs?: {spotName: string; rating: number;
 }[];
 };
 
@@ -17,8 +17,8 @@ export function buildDnftMetadata({
   stampCount,
   visitedSpots,
   imageUrl,
-  interestTags,
-  favoriteLabs,
+  interestTags = [],
+  favoriteLabs = [],
 }: DnftMetadataInput) {
   return {
     name: `OC Passport Lv.${level}`,

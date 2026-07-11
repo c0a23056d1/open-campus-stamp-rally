@@ -118,6 +118,8 @@ export default function DashboardPage() {
         title: passport.nft.title ?? "Fresh Visitor",
         stampCount: passport.nft.stampCount,
         visitedSpots,
+        interestTags: [], // Assuming interestTags is not available in the current context
+        favoriteLabs: [], // Assuming favoriteLabs is not available in the current context
         imageUrl: passport.nft.imageUrl ?? undefined,
       })
     : null;
@@ -300,7 +302,7 @@ export default function DashboardPage() {
           <div
             style={{
               textAlign: "center",
-              marginTop: "-48px",
+              marginTop: "20px",
             }}
           >
             <h2

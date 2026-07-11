@@ -79,14 +79,14 @@ function renderStars(rating: number) {
 
 function renderOuterFrame(stroke: string) {
   return `
-    <rect x="10" y="10" width="300" height="680" rx="18"
+    <rect x="10" y="10" width="300" height="460" rx="18"
       fill="#ffffff" stroke="${stroke}" stroke-width="5" />
   `;
 }
 
 function renderInnerFrame(stroke: string) {
   return `
-    <rect x="22" y="22" width="276" height="656" rx="14"
+    <rect x="22" y="22" width="276" height="436" rx="14"
       fill="none" stroke="${stroke}" stroke-width="2" opacity="0.55" />
   `;
 }
@@ -101,15 +101,15 @@ function renderCornerDecoration(stroke: string) {
     <text x="260" y="42" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
     <text x="286" y="76" font-size="7" text-anchor="end" fill="${stroke}" opacity="0.6">✦</text>
 
-    <text x="38" y="352" font-size="22" fill="${stroke}" opacity="0.9">✦</text>
-    <text x="58" y="370" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
-    <text x="34" y="334" font-size="7" fill="${stroke}" opacity="0.6">✦</text>
+    <text x="38" y="422" font-size="22" fill="${stroke}" opacity="0.9">✦</text>
+    <text x="58" y="440" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
+    <text x="34" y="404" font-size="7" fill="${stroke}" opacity="0.6">✦</text>
   `;
 }
 
 function renderBottomEmblem(stroke: string, icon: string) {
   const cx = 260;
-  const cy = 610;
+  const cy = 425;
 
   return `
     <circle cx="${cx}" cy="${cy}" r="31" fill="none"
@@ -167,9 +167,9 @@ function renderLevel2Frame(levelColor: string) {
     <line x1="175" y1="32" x2="200" y2="32" stroke="${levelColor}" stroke-width="2" stroke-linecap="round" />
     <circle cx="160" cy="32" r="5" fill="#ffffff" stroke="${levelColor}" stroke-width="2" />
 
-    <line x1="120" y1="668" x2="145" y2="668" stroke="${levelColor}" stroke-width="2" stroke-linecap="round" />
-    <line x1="175" y1="668" x2="200" y2="668" stroke="${levelColor}" stroke-width="2" stroke-linecap="round" />
-    <circle cx="160" cy="668" r="5" fill="#ffffff" stroke="${levelColor}" stroke-width="2" />
+    <line x1="120" y1="488" x2="145" y2="488" stroke="${levelColor}" stroke-width="2" stroke-linecap="round" />
+    <line x1="175" y1="488" x2="200" y2="488" stroke="${levelColor}" stroke-width="2" stroke-linecap="round" />
+    <circle cx="160" cy="488" r="5" fill="#ffffff" stroke="${levelColor}" stroke-width="2" />
   `;
 }
 
@@ -177,18 +177,18 @@ function renderLevel3Frame(levelColor: string) {
   return `
     ${renderLevel2Frame(levelColor)}
     <polygon points="160,18 166,28 154,28" fill="${levelColor}" opacity="0.9" />
-    <polygon points="160,682 166,672 154,672" fill="${levelColor}" opacity="0.9" />
+    <polygon points="160,502 166,492 154,492" fill="${levelColor}" opacity="0.9" />
   `;
 }
 
 function renderLevel4Frame(levelColor: string) {
   return `
-    ${renderOuterFrame("url(#lv4Gradient)")}682
+    ${renderOuterFrame("url(#lv4Gradient)")}
     ${renderInnerFrame("url(#lv4Gradient)")}
     ${renderCornerDecoration("url(#lv4Gradient)")}
 
     <polygon points="160,18 166,28 154,28" fill="${levelColor}" opacity="0.9" />
-    <polygon points="160,682 166,672 154,672" fill="${levelColor}" opacity="0.9" />
+    <polygon points="160,502 166,492 154,492" fill="${levelColor}" opacity="0.9" />
   `;
 }
 
@@ -324,7 +324,7 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
   const favoriteLabsSvg = props.favoriteLabs
   .slice(0, 3)
   .map((lab, index) => {
-    const y = 468 + index * 24;
+    const y = 368 + index * 22;
 
     return `
       <text
@@ -345,8 +345,8 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
 
   <svg
   width="320"
-  height="720"
-  viewBox="0 0 320 720"
+  height="500"
+  viewBox="0 0 320 500"
   xmlns="http://www.w3.org/2000/svg"
 >
 <defs>
@@ -385,7 +385,7 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
 
   <text
     x="160"
-    y="400"
+    y="300"
     text-anchor="middle"
     font-size="11"
     font-weight="bold"
@@ -396,7 +396,7 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
 
   <text
     x="160"
-    y="416"
+    y="316"
     text-anchor="middle"
     font-size="11"
     font-weight="bold"
@@ -411,7 +411,7 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
   </text>
     <text
     x="160"
-    y="445"
+    y="345"
     text-anchor="middle"
     font-size="11"
     font-weight="bold"
@@ -424,7 +424,7 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
 
   <text
     x="160"
-    y="570"
+    y="445"
     text-anchor="middle"
     font-size="18"
     font-weight="bold"
