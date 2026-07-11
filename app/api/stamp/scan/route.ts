@@ -110,6 +110,7 @@ export async function POST(req: Request) {
       y: true,
       color: true,
       icon: true,
+      ratingDisplayName: true,
     },
     orderBy: {
       id: "asc",
@@ -140,6 +141,30 @@ console.log(
     }
 
 
+    const favoriteLabs = await prisma.spotRating.findMany({
+      where: {
+        userId: userIdNumber,
+      },
+      include: {
+        spot: true,
+      },
+      orderBy: [
+        {
+          rating: "desc",
+        },
+        {
+          updatedAt: "desc",
+        },
+      ],
+      take: 3,
+    });
+    const favoriteLabsForDnft = favoriteLabs.map((item) => ({
+      spotName:
+        item.spot.ratingDisplayName ??
+        item.spot.spotName,
+      rating: item.rating,
+    }));
+
     const pngBuffer = await generatePassportPng({
       level,
       title,
@@ -147,7 +172,7 @@ console.log(
       spots,
       visitedSpots,
       interestTags: topInterestTags,
-      favoriteLabs: [],
+      favoriteLabs: favoriteLabsForDnft,
     });
     const cid = await uploadPngToPinata(
       pngBuffer,
@@ -163,6 +188,7 @@ console.log(
       stampCount,
       visitedSpots,
       interestTags: topInterestTags,
+      favoriteLabs: favoriteLabsForDnft,
       imageUrl,
     });
 

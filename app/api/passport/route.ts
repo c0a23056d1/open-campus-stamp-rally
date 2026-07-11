@@ -23,14 +23,12 @@ export async function GET(req: Request) {
             spot: true,
           },
         },
+        spotRatings: true,
       },
     });
 
     const spots = await prisma.spot.findMany({
-      orderBy: [
-        { floor: "desc" },
-        { spotName: "asc" },
-      ],
+      orderBy: [{ floor: "desc" }, { spotName: "asc" }],
     });
 
     if (!user) {
@@ -50,9 +48,16 @@ export async function GET(req: Request) {
       nft: user.nft,
       stamps: user.stampLogs.map((log) => ({
         id: log.id,
+        spotId: log.spotId,
         visitedAt: log.visitedAt,
         spotName: log.spot.spotName,
         floor: log.spot.floor,
+      })),
+      spotRatings: user.spotRatings.map((rating) => ({
+        id: rating.id,
+        spotId: rating.spotId,
+        rating: rating.rating,
+        comment: rating.comment,
       })),
       spots: spots.map((spot) => ({
         spotName: spot.spotName,

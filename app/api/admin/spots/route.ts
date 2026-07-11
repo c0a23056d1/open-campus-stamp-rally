@@ -39,6 +39,7 @@ export async function POST(req: Request) {
     color,
     icon,
     interestTag,
+    ratingDisplayName,
   } = await req.json();
 
   if (!(await checkAdmin(Number(userId)))) {
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
       color,
       icon,
       interestTag,
+      ratingDisplayName,
     },
   });
   await prisma.chatRoom.create({
