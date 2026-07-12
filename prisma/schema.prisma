@@ -220,6 +220,7 @@ model SurveyResponse {
   q14           Int
   q15           Int
   q16           Int
+  interestTagsJson String @default("[]")
   goodPoint     String?
   improvePoint  String?
   futureRequest String?

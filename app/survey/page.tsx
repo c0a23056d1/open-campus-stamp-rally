@@ -21,7 +21,20 @@ const questions = [
     "自分もイベントづくりに参加している感覚があった​",
     "総合的に満足できた",
 ]
-
+const interestTagOptions = [
+  "AI・機械学習",
+  "ゲーム",
+  "ロボット",
+  "情報セキュリティ",
+  "データサイエンス",
+  "音声・画像処理",
+  "人間・心理",
+  "生体認証",
+  "IoT・センシング",
+  "数理・シミュレーション",
+  "サービス・経営",
+  "Well-being・社会",
+];
 export default function SurveyPage() {
     const router = useRouter();
 
@@ -32,6 +45,7 @@ export default function SurveyPage() {
     const [loading, setLoading] = useState(false);
     const [answered, setAnswered] = useState(false);
     const [checking, setChecking] = useState(true);
+    const [selectedInterestTags, setSelectedInterestTags] = useState<string[]>([]);
 
     useEffect(() => {
         const checkAnswered = async () => {
@@ -61,6 +75,20 @@ export default function SurveyPage() {
             [`q${questionNumber}`]: value,
         }));
     };
+    const handleInterestTagChange = (tag: string) => {
+        setSelectedInterestTags((prev) => {
+            if (prev.includes(tag)) {
+            return prev.filter((item) => item !== tag);
+            }
+
+            if (prev.length >= 3) {
+            alert("興味分野は3つまで選択できます");
+            return prev;
+            }
+
+            return [...prev, tag];
+        });
+    };
 
     const handleSumbit = async () => {
         const userId = localStorage.getItem("userId");
@@ -77,6 +105,12 @@ export default function SurveyPage() {
                 return;
             }
         }
+
+        if (selectedInterestTags.length !== 3) {
+            alert("興味を持った分野を3つ選択してください");
+            return;
+        }
+
         setLoading(true);
 
         const res = await fetch("/api/survey", {
@@ -87,6 +121,7 @@ export default function SurveyPage() {
             body: JSON.stringify({
                 userId,
                 answers,
+                interestTags: selectedInterestTags,
                 goodPoint,
                 improvePoint,
                 futureRequest,
@@ -187,7 +222,59 @@ export default function SurveyPage() {
                         );
                     })}
                 </section>
+                <section style={styles.card}>
+                <h2 style={styles.sectionTitle}>興味を持った分野</h2>
 
+                <p style={{ color: "#64748b", lineHeight: 1.7 }}>
+                    今回のオープンキャンパスで興味を持った分野を3つ選択してください。
+                </p>
+
+                <p
+                    style={{
+                    fontWeight: "bold",
+                    color: selectedInterestTags.length === 3 ? "#059669" : "#2563eb",
+                    }}
+                >
+                    選択数：{selectedInterestTags.length} / 3
+                </p>
+
+                <div
+                    style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                    gap: "10px",
+                    }}
+                >
+                    {interestTagOptions.map((tag) => {
+                    const selected = selectedInterestTags.includes(tag);
+
+                    return (
+                        <label
+                        key={tag}
+                        style={{
+                            padding: "12px 14px",
+                            borderRadius: "12px",
+                            border: selected
+                            ? "2px solid #2563eb"
+                            : "2px solid #e5e7eb",
+                            backgroundColor: selected ? "#eff6ff" : "#ffffff",
+                            color: selected ? "#2563eb" : "#334155",
+                            fontWeight: "bold",
+                            cursor: "pointer",
+                        }}
+                        >
+                        <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => handleInterestTagChange(tag)}
+                            style={{ marginRight: "8px" }}
+                        />
+                        {tag}
+                        </label>
+                    );
+                    })}
+                </div>
+                </section>
                 <section style={styles.card}>
                     <h2 style={styles.sectionTitle}>自由記述</h2>
 

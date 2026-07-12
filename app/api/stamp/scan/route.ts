@@ -217,9 +217,18 @@ console.log(
       });
 
       if (user?.wallet) {
+        const symbolMetadata = {
+          nftId: currentNft.nftId,
+          level,
+          title,
+          stampCount,
+          image: imageUrl,
+          interestTags: topInterestTags,
+          favoriteLabs: favoriteLabsForDnft,
+        };
         const result = await sendDnftMetadata({
           recipientAddress: user.wallet.symbolAddress,
-          metadataJson: JSON.stringify(dnftMetadata),
+          metadataJson: JSON.stringify(symbolMetadata),
         });
 
         metadataTxHash = result.txHash;
