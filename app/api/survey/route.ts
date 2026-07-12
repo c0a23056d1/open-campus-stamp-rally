@@ -11,7 +11,19 @@ export async function POST(req: Request) {
             goodPoint,
             improvePoint,
             futureRequest,
+            interestTags
         } = body;
+
+        if (
+            !Array.isArray(interestTags) ||
+            interestTags.length !== 3 ||
+            new Set(interestTags).size !== 3
+        ) {
+            return NextResponse.json(
+                { message: "興味分野を重複せず3つ選択してください" },
+                { status: 400 }
+            );
+        }
 
         if (!userId || !answers) {
             return NextResponse.json(
@@ -52,6 +64,7 @@ export async function POST(req: Request) {
                 q14: answers.q14,
                 q15: answers.q15,
                 q16: answers.q16,
+                interestTagsJson: JSON.stringify(interestTags),
                 goodPoint,
                 improvePoint,
                 futureRequest,
@@ -74,6 +87,7 @@ export async function POST(req: Request) {
                 q14: answers.q14,
                 q15: answers.q15,
                 q16: answers.q16,
+                interestTagsJson: JSON.stringify(interestTags),
                 goodPoint,
                 improvePoint,
                 futureRequest,
