@@ -378,8 +378,32 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
     Level ${props.level}
   </text>
 
-  <g transform="translate(25, 140) scale(0.8)">
+  <g transform="translate(15, 135) scale(0.7)">
     ${floorsSvg}
+
+    <text
+      x="385"
+      y="-18"
+      text-anchor="middle"
+      font-size="11"
+      font-weight="bold"
+      fill="#374151"
+    >
+      Katayanagi
+    </text>
+
+    <rect
+      x="350"
+      y="-10"
+      width="70"
+      height="88"
+      rx="8"
+      fill="none"
+      stroke="#94a3b8"
+      stroke-width="1.5"
+      stroke-dasharray="4 3"
+    />
+
     ${spotsSvg}
   </g>
 
