@@ -152,12 +152,15 @@ export default function ProposalsPage() {
                 margin: "0 0 8px",
               }}
             >
-              DAO Governance
+              投票一覧
             </p>
 
             <h1 style={{ margin: 0, color: "#0f172a", fontSize: "30px" }}>
-              DAO投票
+              投票画面
             </h1>
+            <p style={{ margin: "8px 0 0", color: "#475569" }}>
+              興味のあるものに投票してみましょう！
+            </p>
 
             <p style={{ margin: "10px 0 0", color: "#64748b" }}>
               あなたのLevel：<strong>{userLevel}</strong>
