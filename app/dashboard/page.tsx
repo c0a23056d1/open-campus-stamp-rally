@@ -44,6 +44,7 @@ export default function DashboardPage() {
   const [passport, setPassport] = useState<PassportData | null>(null);
   const router = useRouter();
   const [ratings, setRatings] = useState<Record<number, number>>({});
+  const [showGuide, setShowGuide] = useState(false);
   useEffect(() => {
     const userId = localStorage.getItem("userId");
 
@@ -189,7 +190,8 @@ export default function DashboardPage() {
       style={{
         minHeight: "100vh",
         backgroundColor: "#f8fafc",
-        padding: "32px",
+        // padding: "32px",
+        padding: "16px",
         boxSizing: "border-box",
       }}
     >
@@ -228,27 +230,50 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <button
-            onClick={handleLogout}
+          <div 
             style={{
-              padding: "10px 18px",
-              borderRadius: "999px",
-              border: "1px solid #cbd5e1",
-              backgroundColor: "#ffffff",
-              color: "#334155",
-              fontWeight: "bold",
-              cursor: "pointer",
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
+              flexWrap: "wrap",
             }}
           >
-            ログアウト
-          </button>
+            <button 
+              onClick={() => setShowGuide(true)}
+              style={{
+                padding: "10px 18px",
+                borderRadius: "999px",
+                border: "1px solid #2563eb",
+                backgroundColor: "#eff6ff",
+                color: "#2563eb",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              使い方
+            </button>
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: "10px 18px",
+                borderRadius: "999px",
+                border: "1px solid #cbd5e1",
+                backgroundColor: "#ffffff",
+                color: "#334155",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              ログアウト
+            </button>
+          </div>
         </header>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "minmax(320px, 420px) 1fr",
-            gap: "24px",
+            gridTemplateColumns: "1fr",
+            gap: "18px",
             alignItems: "start",
           }}
         >
@@ -260,6 +285,8 @@ export default function DashboardPage() {
             padding: "18px",
             boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
             textAlign: "center",
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
           {dnftImageUrl ? (
@@ -275,6 +302,7 @@ export default function DashboardPage() {
                 style={{
                   width: "100%",
                   maxWidth: "420px",
+                  height: "auto",
                   borderRadius: "16px",
                   display: "block",
                   margin: "0 auto",
@@ -387,7 +415,7 @@ export default function DashboardPage() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gridTemplateColumns: "1fr",
                   gap: "12px",
                 }}
               >
@@ -400,41 +428,47 @@ export default function DashboardPage() {
                 <button style={styles.secondaryButton} onClick={() => router.push("/chat")}>
                   チャット
                 </button>
-                <br />
-                <div
-                  style={{
-                    marginTop: "24px",
-                    padding: "18px",
-                    backgroundColor: "#ecfeff",
-                    border: "1px solid #67e8f9",
-                    borderRadius: "16px",
-                  }}
-                >
-                  <h3 style={{ marginTop: 0 }}>オープンキャンパスアンケート</h3>
-
-                  <p style={{ color: "#475569", lineHeight: 1.7 }}>
-                    ご利用ありがとうございました。
-                    アプリやオープンキャンパスについてのアンケートにご協力ください。
-                    回答内容は今後のイベント改善や研究目的で利用します。
-                  </p>
-
-                  <button
-                    onClick={() => router.push("/survey")}
-                    style={{
-                      padding: "10px 18px",
-                      borderRadius: "999px",
-                      border: "none",
-                      backgroundColor: "#10b981",
-                      color: "#fff",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                    }}
-                  >
-                    アンケートに回答する
-                  </button>
-                </div>
               </div>
             </section>
+            <section
+              style={{
+                padding: "20px",
+                backgroundColor: "#ecfeff",
+                border: "1px solid #67e8f9",
+                borderRadius: "20px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.04)",
+              }}
+            >
+              <h2 style={{ marginTop: 0, fontSize: "20px" }}>
+                オープンキャンパスアンケート
+              </h2>
+              <p
+                style={{
+                  color: "#475569",
+                  lineHeight: 1.7,
+                  marginBottom: "16px",
+                }}
+              >
+                オープンキャンパスへの参加ありがとうございます！アプリやオープンキャンパスについてのアンケートにご協力ください。回答内容は今後のイベント改善や研究目的で利用します！
+              </p>
+
+              <button
+                onClick={() => router.push("/survey")}
+                style={{
+                  width: "100%",
+                  padding: "13px 18px",
+                  borderRadius: "999px",
+                  border: "none",
+                  backgroundColor: "#10b981",
+                  color: "#ffffff",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                アンケートに回答する
+              </button>
+            </section>
+              
 
             <section
               style={{
@@ -540,9 +574,190 @@ export default function DashboardPage() {
           </main>
         </div>
       </div>
+
+      {showGuide && (
+        <div
+          onClick={() => setShowGuide(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "16px",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              backgroundColor: "#ffffff",
+              borderRadius: "22px",
+              padding: "24px",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+              boxSizing: "border-box",
+            }}
+          >
+            <div 
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <h2 style={{ margin: 0 }}>アプリの使い方</h2>
+
+              <button
+                onClick={() => setShowGuide(false)}
+                aria-label="閉じる"
+                style={{
+                  width: "38px",
+                  height: "38px",
+                  borderRadius: "50%",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#ffffff",
+                  fontSize: "20px",
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gap: "14px",
+                marginTop: "20px",
+              }}
+            >
+              <GuideStep
+                number="1"
+                title="QRコードを読み取る"
+                description="研究室に設置されたQRコードを読み取り、スタンプを取得します。"
+              />
+
+              <GuideStep
+                number="2"
+                title="OC Passportを育てる"
+                description="取得したスタンプ数に応じてLevelや称号、Passport画像が変化します。"
+              />
+
+              <GuideStep
+                number="3"
+                title="研究室を評価する"
+                description="訪問した研究室は、取得スタンプ一覧から5段階で評価できます。"
+              />
+
+              <GuideStep
+                number="4"
+                title="チャットで交流する"
+                description="Level1になるとチャットが解放され、訪問した研究室の参加者と交流できます。"
+              />
+
+              <GuideStep
+                number="5"
+                title="投票に参加する"
+                description="Level2になると投票へ参加できます。Level3になると投票テーマを提案できます。"
+              />
+
+              <GuideStep
+                number="6"
+                title="アンケートに回答する"
+                description="体験後はぜひアンケートにアンケートに回答し、今後のオープンキャンパス改善にご協力ください！"
+              />
+            </div>
+
+            <button
+              onClick={() => setShowGuide(false)}
+              style={{
+                width: "100%",
+                marginTop: "22px",
+                padding: "13px",
+                borderRadius: "999px",
+                border: "none",
+                backgroundColor: "#2563eb",
+                color: "#ffffff",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+function GuideStep({
+  number,
+  title,
+  description,
+}: {
+  number: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "42px 1fr",
+        gap: "12px",
+        alignItems: "start",
+        padding: "14px",
+        borderRadius: "16px",
+        border: "1px solid #e5e7eb",
+        backgroundColor: "#f8fafc",
+      }}
+    >
+      <div
+        style={{
+          width: "38px",
+          height: "38px",
+          borderRadius: "50%",
+          backgroundColor: "#2563eb",
+          color: "#ffffff",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          fontWeight: "bold",
+        }}
+      >
+        {number}
+      </div>
+
+      <div>
+        <h3
+          style={{
+            margin: "0 0 5px",
+            fontSize: "16px",
+            color: "#0f172a",
+          }}
+        >
+          {title}
+        </h3>
+        <p
+          style={{
+            margin: 0,
+            color: "#64748b",
+            lineHeight: 1.6,
+            fontSize: "14px",
+          }}
+        >
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+} 
 
 const styles: { [key: string]: React.CSSProperties } = {
   primaryButton: {
