@@ -1,4 +1,5 @@
-import sharp from "sharp";
+import path from "path";
+import { Resvg } from "@resvg/resvg-js";
 import {
   renderPassportSvg,
   type RenderPassportSvgProps,
@@ -9,5 +10,20 @@ export async function generatePassportPng(
 ): Promise<Buffer> {
   const svg = renderPassportSvg(props);
 
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  const fontPath = path.join(
+    process.cwd(),
+    "public",
+    "fonts",
+    "NotoSansJP-Regular.ttf"
+  );
+
+  const resvg = new Resvg(svg, {
+    font: {
+      fontFiles: [fontPath],
+      loadSystemFonts: false,
+      defaultFontFamily: "NotoSansJP",
+    },
+  });
+
+  return resvg.render().asPng();
 }

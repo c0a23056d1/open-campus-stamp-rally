@@ -1,17 +1,3 @@
-import fs from "fs";
-import path from "path";
-
-function getNotoSansJpBase64() {
-  const fontPath = path.join(
-    process.cwd(),
-    "public",
-    "fonts",
-    "NotoSansJP-Regular.ttf"
-  );
-
-  return fs.readFileSync(fontPath).toString("base64");
-}
-
 type Spot = {
   spotName: string;
   floor: string;
@@ -287,7 +273,7 @@ function renderFloorLabel(floor: string, y: number) {
 }
 
 export function renderPassportSvg(props: RenderPassportSvgProps) {
-  const fontBase64 = getNotoSansJpBase64();
+  
   const levelColor = getLevelColor(props.level);
   const levelIcon = getLevelIcon(props.level);
   const medalIcon = getMedalIcon(props.level);
@@ -368,15 +354,8 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
 >
 <defs>
   <style>
-    @font-face {
-      font-family: "NotoSansJP";
-      src: url("data:font/ttf;base64,${fontBase64}") format("truetype");
-      font-weight: normal;
-      font-style: normal;
-    }
-
     text {
-      font-family: "NotoSansJP", sans-serif;
+      font-family: "NotoSansJP";
     }
   </style>
 
