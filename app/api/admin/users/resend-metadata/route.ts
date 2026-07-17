@@ -59,6 +59,9 @@ export async function POST(req: Request) {
             title: user.nft.title ?? "Beginner",
             stampCount: user.nft.stampCount,
             visitedSpots,
+            interestTags: [],
+            favoriteLabs: [],
+            imageUrl: user.nft.imageUrl ?? undefined,
         });
 
         const { txHash } = await sendDnftMetadata({

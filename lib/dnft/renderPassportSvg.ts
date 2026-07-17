@@ -46,11 +46,11 @@ function getMedalIcon(level: number) {
 
 function escapeXml(value: string) {
   return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
+    .replace("&", "&amp;")
+    .replace("<", "&lt;")
+    .replace(">", "&gt;")
+    .replace('"', "&quot;")
+    .replace("'", "&apos;");
 }
 
 function getInterestTagEnglish(tag: string) {
