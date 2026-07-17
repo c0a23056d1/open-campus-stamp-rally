@@ -1,3 +1,17 @@
+import fs from "fs";
+import path from "path";
+
+function getNotoSansJpBase64() {
+  const fontPath = path.join(
+    process.cwd(),
+    "public",
+    "fonts",
+    "NotoSansJP-Regular.ttf"
+  );
+
+  return fs.readFileSync(fontPath).toString("base64");
+}
+
 type Spot = {
   spotName: string;
   floor: string;
@@ -6,6 +20,8 @@ type Spot = {
   color: string;
   icon: string;
 };
+
+
 
 export type RenderPassportSvgProps = {
   level: number;
@@ -271,6 +287,7 @@ function renderFloorLabel(floor: string, y: number) {
 }
 
 export function renderPassportSvg(props: RenderPassportSvgProps) {
+  const fontBase64 = getNotoSansJpBase64();
   const levelColor = getLevelColor(props.level);
   const levelIcon = getLevelIcon(props.level);
   const medalIcon = getMedalIcon(props.level);
@@ -350,7 +367,26 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
   xmlns="http://www.w3.org/2000/svg"
 >
 <defs>
-  <linearGradient id="lv4Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+  <style>
+    @font-face {
+      font-family: "NotoSansJP";
+      src: url("data:font/ttf;base64,${fontBase64}") format("truetype");
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    text {
+      font-family: "NotoSansJP", sans-serif;
+    }
+  </style>
+
+  <linearGradient
+    id="lv4Gradient"
+    x1="0%"
+    y1="0%"
+    x2="100%"
+    y2="100%"
+  >
     <stop offset="0%" stop-color="#3b82f6" />
     <stop offset="35%" stop-color="#8b5cf6" />
     <stop offset="70%" stop-color="#ec4899" />
@@ -459,4 +495,4 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
 
   ${renderBottomEmblem(levelColor, medalIcon)}
 </svg>`;
-  }
+} 

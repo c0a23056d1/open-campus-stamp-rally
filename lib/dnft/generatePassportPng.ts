@@ -1,5 +1,8 @@
 import sharp from "sharp";
-import { renderPassportSvg, RenderPassportSvgProps } from "./renderPassportSvg";
+import {
+  renderPassportSvg,
+  type RenderPassportSvgProps,
+} from "./renderPassportSvg";
 
 export async function generatePassportPng(
   props: RenderPassportSvgProps
