@@ -1,0 +1,12 @@
+LOAD DATABASE
+  FROM sqlite:///home/c0a23056d1/open-campus-stamp-rally/prisma/dev.db
+  INTO postgresql://neondb_owner:npg_7yqkMupt3AgW@ep-solitary-rice-azbzv4nw.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+WITH
+  data only,
+  reset sequences,
+  disable triggers
+
+SET
+  work_mem to '16MB',
+  maintenance_work_mem to '512MB';
