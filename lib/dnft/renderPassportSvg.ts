@@ -29,22 +29,159 @@ function getLevelColor(level: number) {
   if (level === 1) return "#3b82f6";
   return "#9ca3af";
 }
-
-function getLevelIcon(level: number) {
-  if (level >= 4) return "♛";
-  if (level >= 3) return "★";
-  if (level >= 2) return "✦";
-  if (level >= 1) return "◆";
-  return "o";
+function renderSparkle(
+  cx: number,
+  cy: number,
+  size: number,
+  fill: string,
+  opacity = 1
+) {
+  return `
+    <path
+      d="
+        M ${cx} ${cy - size}
+        C ${cx + size * 0.18} ${cy - size * 0.18},
+          ${cx + size * 0.18} ${cy - size * 0.18},
+          ${cx + size} ${cy}
+        C ${cx + size * 0.18} ${cy + size * 0.18},
+          ${cx + size * 0.18} ${cy + size * 0.18},
+          ${cx} ${cy + size}
+        C ${cx - size * 0.18} ${cy + size * 0.18},
+          ${cx - size * 0.18} ${cy + size * 0.18},
+          ${cx - size} ${cy}
+        C ${cx - size * 0.18} ${cy - size * 0.18},
+          ${cx - size * 0.18} ${cy - size * 0.18},
+          ${cx} ${cy - size}
+        Z
+      "
+      fill="${fill}"
+      opacity="${opacity}"
+    />
+  `;
 }
 
-function getMedalIcon(level: number) {
-  if (level >= 4) return "♛";
-  if (level >= 3) return "★";
-  if (level >= 2) return "✦";
-  if (level >= 1) return "◆";
-  return "o";
+function renderFivePointStar(
+  cx: number,
+  cy: number,
+  outerRadius: number,
+  innerRadius: number,
+  fill: string
+) {
+  const points = Array.from({ length: 10 }, (_, index) => {
+    const radius = index % 2 === 0 ? outerRadius : innerRadius;
+    const angle = -Math.PI / 2 + (index * Math.PI) / 5;
+
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+
+    return `${x},${y}`;
+  }).join(" ");
+
+  return `<polygon points="${points}" fill="${fill}" />`;
 }
+
+function renderCrown(
+  cx: number,
+  cy: number,
+  size: number,
+  fill: string
+) {
+  const left = cx - size;
+  const right = cx + size;
+  const top = cy - size * 0.7;
+  const bottom = cy + size * 0.65;
+
+  return `
+    <path
+      d="
+        M ${left} ${cy - size * 0.25}
+        L ${cx - size * 0.55} ${top}
+        L ${cx} ${cy - size * 0.2}
+        L ${cx + size * 0.55} ${top}
+        L ${right} ${cy - size * 0.25}
+        L ${cx + size * 0.7} ${bottom}
+        L ${cx - size * 0.7} ${bottom}
+        Z
+      "
+      fill="${fill}"
+    />
+
+    <rect
+      x="${cx - size * 0.7}"
+      y="${bottom - size * 0.18}"
+      width="${size * 1.4}"
+      height="${size * 0.28}"
+      rx="${size * 0.08}"
+      fill="${fill}"
+    />
+  `;
+}
+
+function renderLevelSymbol(
+  level: number,
+  cx: number,
+  cy: number,
+  size: number,
+  fill: string
+) {
+  if (level >= 4) {
+    return renderCrown(cx, cy, size, fill);
+  }
+
+  if (level === 3) {
+    return renderFivePointStar(
+      cx,
+      cy,
+      size,
+      size * 0.45,
+      fill
+    );
+  }
+
+  if (level === 2) {
+    return renderSparkle(cx, cy, size, fill);
+  }
+
+  if (level === 1) {
+    return `
+      <polygon
+        points="
+          ${cx},${cy - size}
+          ${cx + size},${cy}
+          ${cx},${cy + size}
+          ${cx - size},${cy}
+        "
+        fill="${fill}"
+      />
+    `;
+  }
+
+  return `
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="${size * 0.55}"
+      fill="none"
+      stroke="${fill}"
+      stroke-width="2"
+    />
+  `;
+}
+// function getLevelIcon(level: number) {
+//   if (level >= 4) return "♛";
+//   if (level >= 3) return "★";
+//   if (level >= 2) return "✦";
+//   if (level >= 1) return "◆";
+//   return "o";
+// }
+
+// function getMedalIcon(level: number) {
+//   if (level >= 4) return "♛";
+//   if (level >= 3) return "★";
+//   if (level >= 2) return "✦";
+//   if (level >= 1) return "◆";
+//   return "o";
+// }
 
 function escapeXml(value: string) {
   return value
@@ -95,38 +232,75 @@ function renderInnerFrame(stroke: string) {
 
 function renderCornerDecoration(stroke: string) {
   return `
-    <text x="38" y="58" font-size="22" fill="${stroke}" opacity="0.9">✦</text>
-    <text x="58" y="42" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
-    <text x="34" y="76" font-size="7" fill="${stroke}" opacity="0.6">✦</text>
+    ${renderSparkle(38, 58, 11, stroke, 0.9)}
+    ${renderSparkle(58, 42, 4, stroke, 0.75)}
+    ${renderSparkle(34, 76, 3.5, stroke, 0.6)}
 
-    <text x="282" y="58" font-size="22" text-anchor="end" fill="${stroke}" opacity="0.9">✦</text>
-    <text x="260" y="42" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
-    <text x="286" y="76" font-size="7" text-anchor="end" fill="${stroke}" opacity="0.6">✦</text>
+    ${renderSparkle(282, 58, 11, stroke, 0.9)}
+    ${renderSparkle(260, 42, 4, stroke, 0.75)}
+    ${renderSparkle(286, 76, 3.5, stroke, 0.6)}
 
-    <text x="38" y="452" font-size="22" fill="${stroke}" opacity="0.9">✦</text>
-    <text x="58" y="470" font-size="8" fill="${stroke}" opacity="0.75">✦</text>
-    <text x="34" y="434" font-size="7" fill="${stroke}" opacity="0.6">✦</text>
+    ${renderSparkle(38, 452, 11, stroke, 0.9)}
+    ${renderSparkle(58, 470, 4, stroke, 0.75)}
+    ${renderSparkle(34, 434, 3.5, stroke, 0.6)}
   `;
 }
 
-function renderBottomEmblem(stroke: string, icon: string) {
+function renderBottomEmblem(
+  stroke: string,
+  level: number
+) {
   const cx = 260;
   const cy = 465;
 
   return `
-    <circle cx="${cx}" cy="${cy}" r="31" fill="none"
-      stroke="${stroke}" stroke-width="1.2" opacity="0.6" stroke-dasharray="2 2" />
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="31"
+      fill="none"
+      stroke="${stroke}"
+      stroke-width="1.2"
+      opacity="0.6"
+      stroke-dasharray="2 2"
+    />
 
-    <circle cx="${cx}" cy="${cy}" r="28" fill="#ffffff"
-      stroke="${stroke}" stroke-width="3" />
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="28"
+      fill="#ffffff"
+      stroke="${stroke}"
+      stroke-width="3"
+    />
 
-    <circle cx="${cx}" cy="${cy}" r="23" fill="none"
-      stroke="${stroke}" stroke-width="1.5" opacity="0.45" />
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="23"
+      fill="none"
+      stroke="${stroke}"
+      stroke-width="1.5"
+      opacity="0.45"
+    />
 
-    <circle cx="${cx}" cy="${cy}" r="18" fill="${stroke}" opacity="0.12" />
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="18"
+      fill="${stroke}"
+      opacity="0.12"
+    />
 
-    <circle cx="${cx}" cy="${cy}" r="15" fill="none"
-      stroke="${stroke}" stroke-width="1.2" opacity="0.35" />
+    <circle
+      cx="${cx}"
+      cy="${cy}"
+      r="15"
+      fill="none"
+      stroke="${stroke}"
+      stroke-width="1.2"
+      opacity="0.35"
+    />
 
     <path
       d="
@@ -142,10 +316,13 @@ function renderBottomEmblem(stroke: string, icon: string) {
       opacity="0.85"
     />
 
-    <text x="${cx}" y="${cy + 9}" text-anchor="middle"
-      font-size="28" font-weight="bold" fill="${stroke}">
-      ${escapeXml(icon)}
-    </text>
+    ${renderLevelSymbol(
+      level,
+      cx,
+      cy,
+      level >= 4 ? 11 : 10,
+      stroke
+    )}
   `;
 }
 
@@ -275,8 +452,7 @@ function renderFloorLabel(floor: string, y: number) {
 export function renderPassportSvg(props: RenderPassportSvgProps) {
   
   const levelColor = getLevelColor(props.level);
-  const levelIcon = getLevelIcon(props.level);
-  const medalIcon = getMedalIcon(props.level);
+
 
   const floors = [...new Set(props.spots.map((spot) => spot.floor))];
 
@@ -377,13 +553,13 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
 
   <circle cx="160" cy="34" r="16" fill="#ffffff" stroke="${levelColor}" stroke-width="2" />
 
-  <text x="160" y="39" text-anchor="middle" font-size="16" font-weight="bold" fill="${levelColor}">
-    ${escapeXml(levelIcon)}
-  </text>
-
-  <text x="160" y="68" text-anchor="middle" font-size="20" font-weight="bold" fill="${levelColor}">
-    OC Passport
-  </text>
+  ${renderLevelSymbol(
+    props.level,
+    160,
+    34,
+    props.level >= 4 ? 8 : 7,
+    levelColor
+  )}
 
   <text x="160" y="95" text-anchor="middle" font-size="14" font-weight="bold" fill="#111827">
     ${escapeXml(props.title)}
@@ -472,6 +648,9 @@ export function renderPassportSvg(props: RenderPassportSvgProps) {
     ${props.stampCount} Stamp
   </text>
 
-  ${renderBottomEmblem(levelColor, medalIcon)}
+  ${renderBottomEmblem(
+    levelColor,
+    props.level
+  )}
 </svg>`;
 } 
