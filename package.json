@@ -13,6 +13,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "bcrypt": "^6.0.0",
     "html5-qrcode": "^2.3.8",
+    "idb": "^8.0.3",
     "next": "16.2.9",
     "next-auth": "^4.24.14",
     "prisma": "^6.19.3",
