@@ -325,7 +325,7 @@ export default function AdminProposalsPage() {
                       <p>
                         <strong>作成者：</strong>
                         {proposal.creator
-                          ? proposal.creator.name || proposal.creator.email
+                          ? proposal.creator.name || proposal.creator.email || "名無し"
                           : "管理者"}
                       </p>
                     </div>

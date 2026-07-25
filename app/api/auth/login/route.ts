@@ -17,6 +17,13 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!user.passwordHash) {
+      return NextResponse.json(
+        { message: "このアカウントはWeb3認証を使用しています" },
+        { status: 400 }
+      );
+    }
+
     const isValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isValid) {

@@ -24,8 +24,8 @@ export async function GET(req: Request) {
     message: "管理者確認成功",
     user: {
       id: user.id,
-      name: user.name,
-      email: user.email,
+      name: user.name || "名無し",
+      email: user.email ?? "メール未登録",
       isAdmin: user.isAdmin,
     },
   });

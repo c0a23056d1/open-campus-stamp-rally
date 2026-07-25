@@ -191,7 +191,7 @@ export default function AdminAnalyticsPage() {
             data.communication.userMessageRanking.map((user) => (
               <BarRow
                 key={user.userId}
-                label={user.name || user.email}
+                label={user.name || user.email || "名無し"}
                 value={user.messageCount}
                 max={Math.max(
                   1,

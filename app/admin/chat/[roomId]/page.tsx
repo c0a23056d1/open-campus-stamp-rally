@@ -130,7 +130,7 @@ export default function AdminChatMessagesPage() {
           >
             <p>
               <strong>投稿者：</strong>
-              {message.user.name || "名無し"} / {message.user.email}
+              {message.user.name || "名無し"} / {message.user.email ?? "未登録"}
             </p>
 
             <p>

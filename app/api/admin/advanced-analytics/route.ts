@@ -162,7 +162,7 @@ export async function GET(req: Request) {
         userMessageMap.set(message.userId, {
           userId: message.userId,
           name: message.user.name,
-          email: message.user.email,
+          email: message.user.email ?? "未登録",
           messageCount: 1,
         });
       }

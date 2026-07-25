@@ -153,7 +153,7 @@ export default function AdminUsersPage() {
                     {user.name}
                     {user.isAdmin && <span style={styles.adminBadge}>管理者</span>}
                   </h2>
-                  <p style={styles.userEmail}>{user.email}</p>
+                  <p style={styles.userEmail}>{user.email ?? "メール未登録"}</p>
                 </div>
 
                 <span style={styles.userIdBadge}>ID: {user.id}</span>

@@ -46,32 +46,75 @@ export default function DashboardPage() {
   const [ratings, setRatings] = useState<Record<number, number>>({});
   const [showGuide, setShowGuide] = useState(false);
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
-
     const fetchPassport = async () => {
-      const res = await fetch(`/api/passport?userId=${userId}`);
-      const data = await res.json();
+      try {
+        const res = await fetch("/api/passport", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
 
-      if (!res.ok) {
-        alert(data.message);
-        router.push("/login");
-        return;
+        const data = (await res.json()) as
+          | PassportData
+          | { message?: string };
+
+        if (!res.ok) {
+          const message =
+            "message" in data
+              ? data.message
+              : "Passport情報を取得できませんでした";
+
+          console.error(message);
+
+          router.replace("/start");
+          return;
+        }
+
+        setPassport(data as PassportData);
+      } catch (error) {
+        console.error(
+          "Passport情報の取得に失敗しました:",
+          error
+        );
+
+        router.replace("/start");
       }
-
-      setPassport(data);
     };
 
-    fetchPassport();
+    void fetchPassport();
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      const data = (await res.json()) as {
+        message?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(
+          data.message || "ログアウトに失敗しました"
+        );
+      }
+
+      router.replace("/start");
+      router.refresh();
+    } catch (error) {
+      console.error(
+        "ログアウトに失敗しました:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "ログアウトに失敗しました"
+      );
+    }
   };
   const handleRating = async (spotId: number, rating: number) => {
     const userId = localStorage.getItem("userId");
@@ -481,16 +524,8 @@ export default function DashboardPage() {
             >
               <h2 style={{ marginTop: 0 }}>ユーザー情報</h2>
               <p>
-                <strong>名前：</strong>
-                {passport.user.name}
-              </p>
-              <p>
-                <strong>メール：</strong>
-                {passport.user.email}
-              </p>
-              <p style={{ wordBreak: "break-all" }}>
-                <strong>Symbolアドレス：</strong>
-                {passport.wallet?.symbolAddress ?? "未登録"}
+                <strong>表示名：</strong>
+                {passport.user.name || "名無し"}
               </p>
             </section>
 
