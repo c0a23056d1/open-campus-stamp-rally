@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendInitialMosaic } from "@/lib/symbolTransfer";
+import { sendInitialMosaic } from "@/lib/symbol/symbolTransfer";
 
 async function checkAdmin(adminUserId: number) {
     const admin = await prisma.user.findUnique({

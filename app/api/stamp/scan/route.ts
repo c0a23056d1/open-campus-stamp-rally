@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildDnftMetadata } from "@/lib/dnftMetadata";
-import { sendDnftMetadata } from "@/lib/symbolMetadata";
+import { sendDnftMetadata } from "@/lib/symbol/symbolMetadata";
 import { generatePassportPng } from "@/lib/dnft/generatePassportPng";
 import { uploadPngToPinata } from "@/lib/ipfs/uploadToPinata";
 

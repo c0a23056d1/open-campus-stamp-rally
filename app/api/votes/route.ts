@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendDaoEvent } from "@/lib/symbolDao";
+import { sendDaoEvent } from "@/lib/symbol/symbolDao";
 
 export async function POST(req: Request) {
   try {

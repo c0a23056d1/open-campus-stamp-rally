@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { prisma } from "@/lib/prisma";
-import { createSymbolWallet } from "@/lib/symbolWallet";
+import { createSymbolWallet } from "@/lib/symbol/symbolWallet";
 import { encryptText } from "@/lib/crypto";
-import { issueInitialNftToUser } from "@/lib/nftIssue";
+import { issueInitialNftToUser } from "@/lib/symbol/nftIssue";
 
 export async function POST(req: Request) {
   try {
