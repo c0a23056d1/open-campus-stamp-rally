@@ -116,35 +116,58 @@ export default function DashboardPage() {
       );
     }
   };
-  const handleRating = async (spotId: number, rating: number) => {
-    const userId = localStorage.getItem("userId");
+  const handleRating = async (
+    spotId: number,
+    rating: number
+  ) => {
+    try {
+      const res = await fetch("/api/spot-ratings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
 
-    const res = await fetch("/api/spot-ratings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        spotId,
-        rating,
-      }),
-    });
+        // Session Cookieを送信
+        credentials: "include",
 
-  const data = await res.json();
+        body: JSON.stringify({
+          spotId,
+          rating,
+        }),
+      });
 
-  if (!res.ok) {
-    alert(data.message);
-    return;
-  }
+      const data = await res.json();
 
-  setRatings((prev) => ({
-    ...prev,
-    [spotId]: rating,
-  }));
+      if (res.status === 401) {
+        alert(
+          data.message ??
+            "認証の有効期限が切れました。"
+        );
 
-  alert("評価を保存しました！");
-};
+        router.replace("/start");
+        return;
+      }
+
+      if (!res.ok) {
+        alert(data.message);
+        return;
+      }
+
+      setRatings((prev) => ({
+        ...prev,
+        [spotId]: rating,
+      }));
+
+      alert("評価を保存しました！");
+    } catch (error) {
+      console.error(
+        "研究室評価の保存に失敗しました:",
+        error
+      );
+
+      alert("研究室評価の保存に失敗しました。");
+    }
+  };
   if (!passport) {
     return (
       <div style={{ padding: "24px", backgroundColor: "#f8fafc" }}>
