@@ -1,20 +1,34 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/session";
 import { sendDaoEvent } from "@/lib/symbol/symbolDao";
 
 export async function POST(req: Request) {
   try {
-    const { userId, proposalId, proposalOptionId } = await req.json();
+    const sessionUser = await requireUser();
 
-    if (!userId || !proposalId || !proposalOptionId) {
+    const { proposalId, proposalOptionId } = await req.json();
+
+    const proposalIdNumber = Number(proposalId);
+    const proposalOptionIdNumber = Number(proposalOptionId);
+
+    if (
+      !proposalIdNumber ||
+      !proposalOptionIdNumber ||
+      !Number.isInteger(proposalIdNumber) ||
+      !Number.isInteger(proposalOptionIdNumber)
+    ) {
       return NextResponse.json(
-        { message: "userId、proposalId、proposalOptionIdが必要です" },
+        { message: "proposalIdとproposalOptionIdが必要です" },
         { status: 400 }
       );
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: Number(userId) },
+      where: {
+        id: sessionUser.id,
+      },
       include: {
         nft: true,
       },
@@ -28,7 +42,9 @@ export async function POST(req: Request) {
     }
 
     const proposal = await prisma.proposal.findUnique({
-      where: { id: Number(proposalId) },
+      where: {
+        id: proposalIdNumber,
+      },
       include: {
         options: true,
       },
@@ -41,8 +57,15 @@ export async function POST(req: Request) {
       );
     }
 
+    if (proposal.status !== "approved") {
+      return NextResponse.json(
+        { message: "このProposalには投票できません" },
+        { status: 403 }
+      );
+    }
+
     const option = proposal.options.find(
-      (item) => item.id === Number(proposalOptionId)
+      (item) => item.id === proposalOptionIdNumber
     );
 
     if (!option) {
@@ -68,18 +91,34 @@ export async function POST(req: Request) {
       );
     }
 
-    if (user.nft.level < proposal.requiredLevel) {
+    if (user.nft.level < proposal.requiredLevel && !user.isAdmin) {
       return NextResponse.json(
-        { message: `この投票にはLevel ${proposal.requiredLevel}以上が必要です` },
+        {
+          message: `この投票にはLevel ${proposal.requiredLevel}以上が必要です`,
+        },
         { status: 403 }
+      );
+    }
+
+    const existingVote = await prisma.vote.findFirst({
+      where: {
+        userId: sessionUser.id,
+        proposalId: proposalIdNumber,
+      },
+    });
+
+    if (existingVote) {
+      return NextResponse.json(
+        { message: "このProposalにはすでに投票しています" },
+        { status: 409 }
       );
     }
 
     const vote = await prisma.vote.create({
       data: {
-        userId: Number(userId),
-        proposalId: Number(proposalId),
-        proposalOptionId: Number(proposalOptionId),
+        userId: sessionUser.id,
+        proposalId: proposalIdNumber,
+        proposalOptionId: proposalOptionIdNumber,
       },
     });
 
@@ -91,11 +130,12 @@ export async function POST(req: Request) {
         proposalId: proposal.id,
         title: proposal.title,
         status: "voted",
-        actorUserId: Number(userId),
-        optionId: Number(proposalOptionId),
+        actorUserId: sessionUser.id,
+        optionId: proposalOptionIdNumber,
         optionLabel: option.label,
         actorLevel: user.nft.level,
       });
+
       voteTxHash = result.txHash;
     } catch (symbolError) {
       console.error("DAOイベント送信に失敗しました:", symbolError);
@@ -113,16 +153,34 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       message: voteTxHash
-      ? "投票し、Symbolに記録しました"
-      : "投票しましたが、Symbolへの記録に失敗しました",
+        ? "投票し、Symbolに記録しました"
+        : "投票しましたが、Symbolへの記録に失敗しました",
       vote: updatedVote,
       voteTxHash,
     });
   } catch (error) {
-    console.error(error);
+    console.error("投票処理エラー:", error);
+
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        { message: "このProposalにはすでに投票しています" },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       { message: "投票中にエラーが発生しました" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

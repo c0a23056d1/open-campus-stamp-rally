@@ -36,24 +36,35 @@ export async function GET() {
 
     const visitedSpotIds = user.stampLogs.map((log) => log.spotId);
 
+    const now = new Date();
+
     const rooms = await prisma.chatRoom.findMany({
-      where: user.isAdmin
-        ? undefined
-        : {
-            OR: [
-              {
-                roomType: {
-                  in: ["general", "proposal"],
-                },
-              },
-              {
-                roomType: "spot",
-                spotId: {
+      where: {
+        OR: [
+          {
+            roomType: "general",
+          },
+          {
+            roomType: "spot",
+            spotId: user.isAdmin
+              ? undefined
+              : {
                   in: visitedSpotIds,
                 },
-              },
-            ],
           },
+          {
+            roomType: "proposal",
+            proposals: {
+              some: {
+                status: "approved",
+                endAt: {
+                  gte: now,
+                },
+              },
+            },
+          },
+        ],
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -67,8 +78,23 @@ export async function GET() {
           },
         },
         spot: true,
+        proposals: true,
       },
     });
+
+    console.log(
+      rooms.map((room) => ({
+        roomId: room.id,
+        roomName: room.roomName,
+        roomType: room.roomType,
+        proposals: room.proposals.map((proposal) => ({
+          id: proposal.id,
+          title: proposal.title,
+          endAt: proposal.endAt,
+          expired: proposal.endAt < now,
+        })),
+      }))
+    );
 
     return NextResponse.json({ rooms });
   } catch (error) {

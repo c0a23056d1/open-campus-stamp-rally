@@ -54,6 +54,7 @@ export async function PATCH(req: Request) {
           roomName: `${proposal.title} 議論ルーム`,
           description:
             `Proposal「${proposal.title}」について話し合うためのチャットルームです。`,
+          roomType: "proposal",
         },
       });
 
