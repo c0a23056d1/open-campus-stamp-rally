@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/session";
 
 async function canAccessRoom({
   userId,
@@ -9,7 +10,9 @@ async function canAccessRoom({
   roomId: number;
 }) {
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: {
+      id: userId,
+    },
     include: {
       nft: true,
     },
@@ -17,7 +20,7 @@ async function canAccessRoom({
 
   if (!user || !user.nft) {
     return {
-      ok: false,
+      ok: false as const,
       status: 404,
       message: "ユーザー情報が見つかりません",
       user: null,
@@ -27,7 +30,7 @@ async function canAccessRoom({
 
   if (user.nft.level < 1 && !user.isAdmin) {
     return {
-      ok: false,
+      ok: false as const,
       status: 403,
       message: "チャットはLevel 1以上で利用できます",
       user,
@@ -36,7 +39,9 @@ async function canAccessRoom({
   }
 
   const room = await prisma.chatRoom.findUnique({
-    where: { id: roomId },
+    where: {
+      id: roomId,
+    },
     include: {
       spot: true,
     },
@@ -44,7 +49,7 @@ async function canAccessRoom({
 
   if (!room) {
     return {
-      ok: false,
+      ok: false as const,
       status: 404,
       message: "チャットルームが見つかりません",
       user,
@@ -55,7 +60,7 @@ async function canAccessRoom({
   if (room.roomType === "spot") {
     if (!room.spotId) {
       return {
-        ok: false,
+        ok: false as const,
         status: 400,
         message: "研究室チャットの設定が不正です",
         user,
@@ -74,7 +79,7 @@ async function canAccessRoom({
 
     if (!visited && !user.isAdmin) {
       return {
-        ok: false,
+        ok: false as const,
         status: 403,
         message: "この研究室を訪問した参加者のみ利用できます",
         user,
@@ -84,7 +89,7 @@ async function canAccessRoom({
   }
 
   return {
-    ok: true,
+    ok: true as const,
     status: 200,
     message: "OK",
     user,
@@ -94,18 +99,22 @@ async function canAccessRoom({
 
 export async function GET(req: Request) {
   try {
+    const sessionUser = await requireUser();
+
     const { searchParams } = new URL(req.url);
-    const userId = Number(searchParams.get("userId"));
     const roomId = Number(searchParams.get("roomId"));
 
-    if (!userId || !roomId) {
+    if (!roomId || !Number.isInteger(roomId)) {
       return NextResponse.json(
-        { message: "userIdとroomIdが必要です" },
+        { message: "正しいroomIdが必要です" },
         { status: 400 }
       );
     }
 
-    const access = await canAccessRoom({ userId, roomId });
+    const access = await canAccessRoom({
+      userId: sessionUser.id,
+      roomId,
+    });
 
     if (!access.ok) {
       return NextResponse.json(
@@ -146,9 +155,18 @@ export async function GET(req: Request) {
     return NextResponse.json({
       room: access.room,
       messages,
+      currentUserId: sessionUser.id,
     });
   } catch (error) {
-    console.error(error);
+    console.error("チャット取得エラー:", error);
+
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       { message: "チャット取得に失敗しました" },
       { status: 500 }
@@ -158,18 +176,20 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { userId, roomId, messageText, replyToMessageId } = await req.json();
+    const sessionUser = await requireUser();
 
-    if (!userId || !roomId || !messageText) {
+    const body = await req.json();
+    const { roomId, messageText, replyToMessageId } = body;
+
+    const roomIdNumber = Number(roomId);
+    const trimmedMessage = String(messageText ?? "").trim();
+
+    if (!roomIdNumber || !Number.isInteger(roomIdNumber)) {
       return NextResponse.json(
-        { message: "userId、roomId、messageTextが必要です" },
+        { message: "正しいroomIdが必要です" },
         { status: 400 }
       );
     }
-
-    const userIdNumber = Number(userId);
-    const roomIdNumber = Number(roomId);
-    const trimmedMessage = String(messageText).trim();
 
     if (!trimmedMessage) {
       return NextResponse.json(
@@ -186,7 +206,7 @@ export async function POST(req: Request) {
     }
 
     const access = await canAccessRoom({
-      userId: userIdNumber,
+      userId: sessionUser.id,
       roomId: roomIdNumber,
     });
 
@@ -197,12 +217,43 @@ export async function POST(req: Request) {
       );
     }
 
+    let replyToId: number | null = null;
+
+    if (replyToMessageId !== null && replyToMessageId !== undefined) {
+      replyToId = Number(replyToMessageId);
+
+      if (!replyToId || !Number.isInteger(replyToId)) {
+        return NextResponse.json(
+          { message: "返信先メッセージの指定が不正です" },
+          { status: 400 }
+        );
+      }
+
+      const replyTarget = await prisma.chatMessage.findFirst({
+        where: {
+          id: replyToId,
+          roomId: roomIdNumber,
+          isDeleted: false,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!replyTarget) {
+        return NextResponse.json(
+          { message: "返信先メッセージが見つかりません" },
+          { status: 404 }
+        );
+      }
+    }
+
     const created = await prisma.chatMessage.create({
       data: {
         roomId: roomIdNumber,
-        userId: userIdNumber,
+        userId: sessionUser.id,
         messageText: trimmedMessage,
-        replyToMessageId: replyToMessageId ? Number(replyToMessageId) : null,
+        replyToMessageId: replyToId,
       },
       include: {
         user: {
@@ -230,7 +281,15 @@ export async function POST(req: Request) {
       chatMessage: created,
     });
   } catch (error) {
-    console.error(error);
+    console.error("チャット投稿エラー:", error);
+
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       { message: "チャット投稿に失敗しました" },
       { status: 500 }

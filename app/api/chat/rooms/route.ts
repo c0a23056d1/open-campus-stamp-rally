@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/session";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = Number(searchParams.get("userId"));
-
-    if (!userId) {
-      return NextResponse.json(
-        { message: "userIdが必要です" },
-        { status: 400 }
-      );
-    }
+    const sessionUser = await requireUser();
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: {
+        id: sessionUser.id,
+      },
       include: {
         nft: true,
-        stampLogs: true,
+        stampLogs: {
+          select: {
+            spotId: true,
+          },
+        },
       },
     });
 
@@ -38,21 +37,23 @@ export async function GET(req: Request) {
     const visitedSpotIds = user.stampLogs.map((log) => log.spotId);
 
     const rooms = await prisma.chatRoom.findMany({
-      where: {
-        OR: [
-          {
-            roomType: {
-              in: ["general", "proposal"],
-            },
+      where: user.isAdmin
+        ? undefined
+        : {
+            OR: [
+              {
+                roomType: {
+                  in: ["general", "proposal"],
+                },
+              },
+              {
+                roomType: "spot",
+                spotId: {
+                  in: visitedSpotIds,
+                },
+              },
+            ],
           },
-          {
-            roomType: "spot",
-            spotId: {
-              in: visitedSpotIds,
-            },
-          },
-        ],
-      },
       orderBy: {
         createdAt: "desc",
       },
@@ -61,6 +62,9 @@ export async function GET(req: Request) {
           where: {
             isDeleted: false,
           },
+          select: {
+            id: true,
+          },
         },
         spot: true,
       },
@@ -68,7 +72,15 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ rooms });
   } catch (error) {
-    console.error(error);
+    console.error("チャットルーム取得エラー:", error);
+
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       { message: "チャットルーム取得に失敗しました" },
       { status: 500 }
