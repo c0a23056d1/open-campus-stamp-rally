@@ -1,31 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth/session";
 
-async function checkAdmin(userId: number) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  return !!user?.isAdmin;
-}
+export const runtime = "nodejs";
 
 export async function GET(req: Request) {
   try {
+    await requireAdmin();
+
     const { searchParams } = new URL(req.url);
-    const adminUserId = Number(searchParams.get("adminUserId"));
     const roomId = Number(searchParams.get("roomId"));
 
-    if (!adminUserId || !roomId) {
+    if (!Number.isInteger(roomId) || roomId <= 0) {
       return NextResponse.json(
-        { message: "adminUserIdとroomIdが必要です" },
+        { message: "有効なroomIdが必要です" },
         { status: 400 }
-      );
-    }
-
-    if (!(await checkAdmin(adminUserId))) {
-      return NextResponse.json(
-        { message: "管理者権限がありません" },
-        { status: 403 }
       );
     }
 
@@ -65,7 +54,28 @@ export async function GET(req: Request) {
       messages,
     });
   } catch (error) {
-    console.error(error);
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "FORBIDDEN"
+    ) {
+      return NextResponse.json(
+        { message: "管理者権限がありません" },
+        { status: 403 }
+      );
+    }
+
+    console.error("メッセージ一覧取得エラー:", error);
+
     return NextResponse.json(
       { message: "メッセージ一覧取得に失敗しました" },
       { status: 500 }
@@ -75,25 +85,24 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const { adminUserId, messageId } = await req.json();
+    await requireAdmin();
 
-    if (!adminUserId || !messageId) {
+    const { messageId } = await req.json();
+    const messageIdNumber = Number(messageId);
+
+    if (
+      !Number.isInteger(messageIdNumber) ||
+      messageIdNumber <= 0
+    ) {
       return NextResponse.json(
-        { message: "adminUserIdとmessageIdが必要です" },
+        { message: "有効なmessageIdが必要です" },
         { status: 400 }
-      );
-    }
-
-    if (!(await checkAdmin(Number(adminUserId)))) {
-      return NextResponse.json(
-        { message: "管理者権限がありません" },
-        { status: 403 }
       );
     }
 
     const message = await prisma.chatMessage.findUnique({
       where: {
-        id: Number(messageId),
+        id: messageIdNumber,
       },
     });
 
@@ -104,9 +113,16 @@ export async function PATCH(req: Request) {
       );
     }
 
+    if (message.isDeleted) {
+      return NextResponse.json(
+        { message: "このメッセージは既に削除されています" },
+        { status: 400 }
+      );
+    }
+
     const updatedMessage = await prisma.chatMessage.update({
       where: {
-        id: Number(messageId),
+        id: messageIdNumber,
       },
       data: {
         isDeleted: true,
@@ -118,7 +134,28 @@ export async function PATCH(req: Request) {
       chatMessage: updatedMessage,
     });
   } catch (error) {
-    console.error(error);
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "FORBIDDEN"
+    ) {
+      return NextResponse.json(
+        { message: "管理者権限がありません" },
+        { status: 403 }
+      );
+    }
+
+    console.error("メッセージ削除エラー:", error);
+
     return NextResponse.json(
       { message: "メッセージ削除に失敗しました" },
       { status: 500 }

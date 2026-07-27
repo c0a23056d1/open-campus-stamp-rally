@@ -40,14 +40,9 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchUsers = async () => {
-    const adminUserId = localStorage.getItem("userId");
-
-    if (!adminUserId) {
-      router.push("/login");
-      return;
-    }
-
-    const res = await fetch(`/api/admin/users?adminUserId=${adminUserId}`);
+    const res = await fetch("/api/admin/users", {
+      credentials: "include",
+    })
     const data = await res.json();
 
     if (!res.ok) {
@@ -65,7 +60,6 @@ export default function AdminUsersPage() {
   }, []);
 
   const handleReissueNft = async (targetUserId: number) => {
-    const adminUserId = localStorage.getItem("userId");
 
     const ok = confirm("このユーザーに初期NFTを再付与しますか？");
     if (!ok) return;
@@ -75,8 +69,8 @@ export default function AdminUsersPage() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
-        adminUserId,
         targetUserId,
       }),
     });
@@ -90,7 +84,6 @@ export default function AdminUsersPage() {
   };
 
   const handleResendMetadata = async (targetUserId: number) => {
-    const adminUserId = localStorage.getItem("userId");
 
     const ok = confirm("このユーザーのMetadataを再送信しますか？");
     if (!ok) return;
@@ -100,8 +93,8 @@ export default function AdminUsersPage() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
-        adminUserId,
         targetUserId,
       }),
     });
