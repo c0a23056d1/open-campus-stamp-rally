@@ -1,49 +1,69 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth/session";
 
-async function checkAdmin(userId: number) {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-    });
+export const runtime = "nodejs";
 
-    return !!user?.isAdmin;
-}
+export async function GET() {
+    try {
+        await requireAdmin();
 
-export async function GET(req: Request) {
-    const { searchParams } = new URL(req.url);
-    const adminUserId = Number(searchParams.get("adminUserId"));
-
-    if (!adminUserId) {
-        return NextResponse.json(
-            { message: "adminUserIdが必要です" },
-            { status: 400 }
-        );
-    }
-
-    if (!(await checkAdmin(adminUserId))) {
-        return NextResponse.json(
-            { message: "管理者権限がありません" },
-            { status: 403 }
-        );
-    }
-
-    const users = await prisma.user.findMany({
-        orderBy: {
-            id: "desc",
-        },
-        include: {
-            wallet: true,
-            nft: true,
-            stampLogs: {
-                include: {
-                    spot: true,
+        const users = await prisma.user.findMany({
+            orderBy: {
+                id: "desc",
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                isAdmin: true,
+                createdAt: true,
+                wallet: {
+                    select: {
+                        id: true,
+                        symbolAddress: true,
+                        symbolPublicKey: true,
+                    },
                 },
-                orderBy: {
-                    visitedAt: "desc",
+                nft: true,
+                stampLogs: {
+                    include: {
+                        spot: true,
+                    },
+                    orderBy: {
+                        visitedAt: "desc",
+                    },
                 },
             },
-        },
-    });
+        });
 
-    return NextResponse.json({ users });
+        return NextResponse.json({ users });
+    } catch (error) {
+        if (
+            error instanceof Error &&
+            error.message === "UNAUTHORIZED"
+        ) {
+            return NextResponse.json(
+                { message: "ログインが必要です" },
+                { status: 401 }
+            );
+        }
+
+        if (
+            error instanceof Error &&
+            error.message === "FORBIDDEN"
+        ) {
+            return NextResponse.json(
+                { message: "管理者権限がありません" },
+                { status: 403 }
+            );
+        }
+
+        console.error("ユーザー一覧取得エラー:", error);
+
+        return NextResponse.json(
+            { message: "ユーザー一覧の取得に失敗しました" },
+            { status: 500 }
+        );
+    }
 }

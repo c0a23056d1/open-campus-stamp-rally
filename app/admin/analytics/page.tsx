@@ -75,15 +75,12 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     const fetchAnalytics = async () => {
-      const adminUserId = localStorage.getItem("userId");
-
-      if (!adminUserId) {
-        router.push("/login");
-        return;
-      }
 
       const res = await fetch(
-        `/api/admin/advanced-analytics?adminUserId=${adminUserId}`
+        `/api/admin/advanced-analytics`,
+        {
+          credentials: "include",
+        }
       );
       const json = await res.json();
 

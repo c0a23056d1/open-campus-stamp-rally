@@ -125,15 +125,13 @@ export default function AdminSurveyPage() {
   useEffect(() => {
     const fetchSurvey = async () => {
       try {
-        const adminUserId = localStorage.getItem("userId");
-
-        if (!adminUserId) {
-          router.push("/login");
-          return;
-        }
+        
 
         const res = await fetch(
-          `/api/admin/survey?adminUserId=${adminUserId}`
+          `/api/admin/survey`,
+          {
+            credentials: "include",
+          }
         );
 
         const json = await res.json();
