@@ -50,9 +50,9 @@ export default function AdminSpotsPage() {
   const [qrImages, setQrImages] = useState<Record<number, string>>({});
 
   const fetchSpots = async () => {
-    const userId = localStorage.getItem("userId");
-
-    const res = await fetch(`/api/admin/spots?userId=${userId}`);
+    const res = await fetch("/api/admin/spots", {
+      credentials: "include",
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -77,15 +77,14 @@ export default function AdminSpotsPage() {
   }, []);
 
   const handleCreateSpot = async () => {
-    const userId = localStorage.getItem("userId");
 
     const res = await fetch("/api/admin/spots", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
-        userId,
         spotName,
         floor,
         description,
