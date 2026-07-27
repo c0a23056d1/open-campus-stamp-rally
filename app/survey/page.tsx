@@ -49,14 +49,10 @@ export default function SurveyPage() {
 
     useEffect(() => {
         const checkAnswered = async () => {
-            const userId = localStorage.getItem("userId");
 
-            if (!userId) {
-                router.push("/login");
-                return;
-            }
-
-            const res = await fetch(`/api/survey?userId=${userId}`);
+            const res = await fetch("/api/survey", {
+                credentials: "include",
+            });
             const data = await res.json();
 
             if (res.ok && data.answered) {
@@ -91,13 +87,6 @@ export default function SurveyPage() {
     };
 
     const handleSumbit = async () => {
-        const userId = localStorage.getItem("userId");
-
-        if (!userId) {
-            alert("ログインしてください");
-            router.push("/login");
-            return;
-        }
 
         for (let i = 1; i <= questions.length; i++) {
             if (!answers[`q${i}`]) {
@@ -115,11 +104,11 @@ export default function SurveyPage() {
 
         const res = await fetch("/api/survey", {
             method: "POST",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                userId,
                 answers,
                 interestTags: selectedInterestTags,
                 goodPoint,
