@@ -42,14 +42,10 @@ export default function ProposalsPage() {
   );
 
   const fetchProposals = async () => {
-    const userId = localStorage.getItem("userId");
 
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
-
-    const res = await fetch(`/api/proposals?userId=${userId}`);
+    const res = await fetch("/api/proposals", {
+      credentials: "include",
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -67,7 +63,7 @@ export default function ProposalsPage() {
   }, []);
 
   const handleVote = async (proposalId: number) => {
-    const userId = localStorage.getItem("userId");
+    
     const proposalOptionId = selectedOptions[proposalId];
 
     if (!proposalOptionId) {
@@ -80,8 +76,8 @@ export default function ProposalsPage() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
-        userId,
         proposalId,
         proposalOptionId,
       }),
