@@ -27,14 +27,10 @@ export default function ChatRoomsPage() {
 
   const fetchRooms = async () => {
     try {
-      const userId = localStorage.getItem("userId");
 
-      if (!userId) {
-        router.push("/login");
-        return;
-      }
-
-      const res = await fetch(`/api/chat/rooms?userId=${userId}`);
+      const res = await fetch("/api/chat/rooms", {
+        credentials: "include",
+      });
       const data = await res.json();
 
       if (!res.ok) {
