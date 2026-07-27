@@ -12,10 +12,17 @@ export default function ScanPage() {
   const isStoppedRef = useRef(false);
   const isProcessingRef = useRef(false);
 
-  const [message, setMessage] = useState("QRコードを読み取ってください");
+  const [message, setMessage] = useState(
+    "QRコードを読み取ってください"
+  );
 
+  /**
+   * QRスキャナーを停止する
+   */
   const stopScanner = async () => {
-    if (!qrRef.current || isStoppedRef.current) return;
+    if (!qrRef.current || isStoppedRef.current) {
+      return;
+    }
 
     try {
       await qrRef.current.stop();
@@ -28,83 +35,157 @@ export default function ScanPage() {
     }
   };
 
+  /**
+   * 読み取ったQRコードをスタンプ取得APIへ送信する
+   *
+   * userIdは送信しない。
+   * API側でSession Cookieから現在のユーザーを取得する。
+   */
   const sendStamp = async (qrSecretCode: string) => {
-    const userId = localStorage.getItem("userId");
+    try {
+      const res = await fetch("/api/stamp/scan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
 
-    if (!userId) {
-      alert("ログインしてください");
-      router.push("/login");
-      return;
+        // HttpOnly CookieをAPIへ送信する
+        credentials: "include",
+
+        body: JSON.stringify({
+          qrSecretCode,
+        }),
+      });
+
+      const data = await res.json();
+
+      /**
+       * Sessionがない、または期限切れ
+       */
+      if (res.status === 401) {
+        alert(
+          data.message ??
+            "認証の有効期限が切れました。もう一度認証してください。"
+        );
+
+        router.replace("/start");
+        return;
+      }
+
+      /**
+       * すでに取得済み
+       */
+      if (res.status === 409) {
+        alert(
+          data.message ??
+            "このスポットのスタンプはすでに取得済みです。"
+        );
+
+        router.replace("/dashboard");
+        return;
+      }
+
+      /**
+       * QRコードが無効、スポットが存在しないなど
+       */
+      if (!res.ok) {
+        alert(
+          data.message ??
+            "スタンプの取得に失敗しました。"
+        );
+
+        router.replace("/dashboard");
+        return;
+      }
+
+      alert(
+        `${data.message}\n取得スポット: ${data.spot.floor} ${data.spot.spotName}`
+      );
+
+      router.replace("/dashboard");
+      router.refresh();
+    } catch (error) {
+      console.error("スタンプ送信エラー:", error);
+
+      alert(
+        "通信エラーが発生しました。時間をおいてもう一度お試しください。"
+      );
+
+      router.replace("/dashboard");
     }
-
-    const res = await fetch("/api/stamp/scan", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        qrSecretCode,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.message);
-      router.push("/dashboard");
-      return;
-    }
-
-    alert(
-      `${data.message}\n取得スポット: ${data.spot.floor} ${data.spot.spotName}`
-    );
-
-    router.push("/dashboard");
   };
 
   useEffect(() => {
     const startScanner = async () => {
-      if (hasStartedRef.current) return;
+      if (hasStartedRef.current) {
+        return;
+      }
+
       hasStartedRef.current = true;
 
-      const readerElement = document.getElementById("qr-reader");
-      if (!readerElement) return;
+      const readerElement =
+        document.getElementById("qr-reader");
+
+      if (!readerElement) {
+        setMessage(
+          "QRコード読み取り画面を準備できませんでした"
+        );
+        return;
+      }
 
       readerElement.innerHTML = "";
 
       const html5QrCode = new Html5Qrcode("qr-reader");
+
       qrRef.current = html5QrCode;
       isStoppedRef.current = false;
 
       try {
         await html5QrCode.start(
-          { facingMode: "environment" },
+          {
+            facingMode: "environment",
+          },
           {
             fps: 10,
-            qrbox: { width: 250, height: 250 },
+            qrbox: {
+              width: 250,
+              height: 250,
+            },
           },
           async (decodedText) => {
-            if (isProcessingRef.current) return;
+            if (isProcessingRef.current) {
+              return;
+            }
+
             isProcessingRef.current = true;
 
-            setMessage("読み取りに成功しました。スタンプを登録しています...");
+            setMessage(
+              "読み取りに成功しました。スタンプを登録しています..."
+            );
 
             await stopScanner();
             await sendStamp(decodedText);
           },
-          () => {}
+          () => {
+            // QRコードを認識できなかったフレームでは何もしない
+          }
         );
       } catch (error) {
-        console.error(error);
-        setMessage("カメラを起動できませんでした");
+        console.error(
+          "カメラ起動エラー:",
+          error
+        );
+
+        setMessage(
+          "カメラを起動できませんでした"
+        );
       }
     };
 
     startScanner();
 
     return () => {
-      stopScanner();
+      void stopScanner();
     };
   }, []);
 
@@ -129,7 +210,8 @@ export default function ScanPage() {
             border: "1px solid #e5e7eb",
             borderRadius: "20px",
             padding: "24px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+            boxShadow:
+              "0 8px 24px rgba(0,0,0,0.06)",
             marginBottom: "20px",
           }}
         >
@@ -172,7 +254,8 @@ export default function ScanPage() {
             border: "1px solid #e5e7eb",
             borderRadius: "20px",
             padding: "24px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+            boxShadow:
+              "0 8px 24px rgba(0,0,0,0.06)",
             textAlign: "center",
           }}
         >
@@ -235,7 +318,10 @@ export default function ScanPage() {
           </p>
 
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={async () => {
+              await stopScanner();
+              router.push("/dashboard");
+            }}
             style={{
               padding: "10px 20px",
               borderRadius: "999px",
