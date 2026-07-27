@@ -2,96 +2,115 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildDnftMetadata } from "@/lib/dnftMetadata";
 import { sendDnftMetadata } from "@/lib/symbol/symbolMetadata";
+import { requireAdmin } from "@/lib/auth/session";
 
-async function checkAdmin(adminUserId: number) {
-    const admin = await prisma.user.findUnique({
-        where: { id: adminUserId },
-    });
-    return !!admin?.isAdmin;
-}
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-    try {
-        const { adminUserId, targetUserId } = await req.json();
+  try {
+    await requireAdmin();
 
-        if (!adminUserId || !targetUserId) {
-            return NextResponse.json(
-                { message: "adminUserIdとtargetUserIdが必要です" },
-                { status: 400 }
-            );
-        }
+    const { targetUserId } = await req.json();
 
-        if (!(await checkAdmin(Number(adminUserId)))) {
-            return NextResponse.json(
-                { message: "管理者権限がありません" },
-                { status: 403 }
-            );
-        }
-
-        const user = await prisma.user.findUnique({
-            where: { id: Number(targetUserId) },
-            include: {
-                wallet: true,
-                nft: true,
-                stampLogs: {
-                    include: {
-                        spot: true,
-                    },
-                    orderBy: {
-                        visitedAt: "asc",
-                    },
-                },
-            },
-        });
-
-        if (!user || !user.wallet || !user.nft) {
-            return NextResponse.json(
-                { message: "対象ユーザー,Wallet,NFT情報が見つかりません。"},
-                { status: 404 }
-            );
-        }
-
-        const visitedSpots = user.stampLogs.map((log) => log.spot.spotName);
-
-        const metadata = buildDnftMetadata({
-            nftId: user.nft.nftId,
-            level: user.nft.level,
-            title: user.nft.title ?? "Beginner",
-            stampCount: user.nft.stampCount,
-            visitedSpots,
-            interestTags: [],
-            favoriteLabs: [],
-            imageUrl: user.nft.imageUrl ?? undefined,
-        });
-
-        const { txHash } = await sendDnftMetadata({
-            recipientAddress: user.wallet.symbolAddress,
-            metadataJson: JSON.stringify(metadata),
-        });
-
-        const updatedNft = await prisma.nFT.update({
-            where: {
-                userId: user.id,
-            },
-            data: {
-                metadataJson: JSON.stringify(metadata),
-                imageUrl: metadata.image,
-                metadataTxHash: txHash,
-                metadataUpdatedAt: new Date(),
-            },
-        });
-
-        return NextResponse.json({
-            message: "メタデータを再送信しました",
-            txHash,
-            nft: updatedNft,
-            metadata,
-        });
-    } catch (error) {
-        console.error(error);
-        return NextResponse.json(
-            { message: "Metadata再送信に失敗しました" },
-            {status: 500}
-        );
+    if (!targetUserId) {
+      return NextResponse.json(
+        { message: "targetUserIdが必要です" },
+        { status: 400 }
+      );
     }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: Number(targetUserId),
+      },
+      include: {
+        wallet: true,
+        nft: true,
+        stampLogs: {
+          include: {
+            spot: true,
+          },
+          orderBy: {
+            visitedAt: "asc",
+          },
+        },
+      },
+    });
+
+    if (!user || !user.wallet || !user.nft) {
+      return NextResponse.json(
+        {
+          message:
+            "対象ユーザー、Wallet、NFT情報が見つかりません。",
+        },
+        { status: 404 }
+      );
+    }
+
+    const visitedSpots = user.stampLogs.map(
+      (log) => log.spot.spotName
+    );
+
+    const metadata = buildDnftMetadata({
+      nftId: user.nft.nftId,
+      level: user.nft.level,
+      title: user.nft.title ?? "Beginner",
+      stampCount: user.nft.stampCount,
+      visitedSpots,
+      interestTags: [],
+      favoriteLabs: [],
+      imageUrl: user.nft.imageUrl ?? undefined,
+    });
+
+    const { txHash } = await sendDnftMetadata({
+      recipientAddress: user.wallet.symbolAddress,
+      metadataJson: JSON.stringify(metadata),
+    });
+
+    const updatedNft = await prisma.nFT.update({
+      where: {
+        userId: user.id,
+      },
+      data: {
+        metadataJson: JSON.stringify(metadata),
+        imageUrl: metadata.image,
+        metadataTxHash: txHash,
+        metadataUpdatedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({
+      message: "メタデータを再送信しました",
+      txHash,
+      nft: updatedNft,
+      metadata,
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "FORBIDDEN"
+    ) {
+      return NextResponse.json(
+        { message: "管理者権限がありません" },
+        { status: 403 }
+      );
+    }
+
+    console.error("Metadata再送信エラー:", error);
+
+    return NextResponse.json(
+      { message: "Metadata再送信に失敗しました" },
+      { status: 500 }
+    );
+  }
 }
