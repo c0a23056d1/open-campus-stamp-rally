@@ -98,11 +98,9 @@ export default function ScanPage() {
         return;
       }
 
-      alert(
-        `${data.message}\n取得スポット: ${data.spot.floor} ${data.spot.spotName}`
+      router.replace(
+        `/dashboard?newStamp=1&spotId=${data.spot.id}&spotName=${encodeURIComponent(data.spot.spotName)}`
       );
-
-      router.replace("/dashboard");
       router.refresh();
     } catch (error) {
       console.error("スタンプ送信エラー:", error);
