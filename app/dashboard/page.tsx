@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { buildDnftMetadata } from "@/lib/dnftMetadata";
 
 type PassportData = {
@@ -43,8 +43,20 @@ type PassportData = {
 export default function DashboardPage() {
   const [passport, setPassport] = useState<PassportData | null>(null);
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const isNewStamp = searchParams.get("newStamp") === "1";
+  const spotId = Number(searchParams.get("spotId"));
+
+  const spotName = searchParams.get("spotName") ?? "";
+  
   const [ratings, setRatings] = useState<Record<number, number>>({});
   const [showGuide, setShowGuide] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [comment, setComment] = useState("");
+
+  const [sendingComment, setSendingComment] = useState(false);
+
   useEffect(() => {
     const fetchPassport = async () => {
       try {
@@ -83,6 +95,12 @@ export default function DashboardPage() {
 
     void fetchPassport();
   }, [router]);
+
+  useEffect(() => {
+    if (isNewStamp) {
+      setShowCommentModal(true);
+    }
+  }, [isNewStamp]);
 
   const handleLogout = async () => {
     try {
@@ -175,6 +193,136 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  const handleCommentSubmit = async () => {
+    const trimmedComment = comment.trim();
+
+    if (!trimmedComment) {
+      alert("感想を入力してください");
+      return;
+    }
+
+    if (!spotId || !Number.isInteger(spotId)) {
+      alert("研究室情報を取得できませんでした");
+      return;
+    }
+
+    if (trimmedComment.length > 300) {
+      alert("感想は300文字以内で入力してください");
+      return;
+    }
+
+    try {
+      setSendingComment(true);
+
+      /*
+      * 訪問可能なチャットルーム一覧を取得する
+      */
+      const roomsRes = await fetch("/api/chat/rooms", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      const roomsData = await roomsRes.json();
+
+      if (roomsRes.status === 401) {
+        alert(
+          roomsData.message ??
+            "認証の有効期限が切れました。もう一度認証してください。"
+        );
+
+        router.replace("/start");
+        return;
+      }
+
+      if (!roomsRes.ok) {
+        throw new Error(
+          roomsData.message ??
+            "チャットルームの取得に失敗しました"
+        );
+      }
+
+      /*
+      * 今回スタンプを取得した研究室に対応する
+      * spot型チャットルームを検索する
+      */
+      const targetRoom = roomsData.rooms.find(
+        (room: {
+          id: number;
+          roomType: string;
+          spotId: number | null;
+          spot?: {
+            id: number;
+          } | null;
+        }) =>
+          room.roomType === "spot" &&
+          (room.spotId === spotId ||
+            room.spot?.id === spotId)
+      );
+
+      if (!targetRoom) {
+        throw new Error(
+          "この研究室に対応するチャットルームが見つかりません"
+        );
+      }
+
+      /*
+      * 既存のチャット投稿APIへ感想を送信する
+      */
+      const messageRes = await fetch("/api/chat/messages", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roomId: targetRoom.id,
+          messageText: trimmedComment,
+          replyToMessageId: null,
+        }),
+      });
+
+      const messageData = await messageRes.json();
+
+      if (messageRes.status === 401) {
+        alert(
+          messageData.message ??
+            "認証の有効期限が切れました。もう一度認証してください。"
+        );
+
+        router.replace("/start");
+        return;
+      }
+
+      if (!messageRes.ok) {
+        throw new Error(
+          messageData.message ??
+            "感想の投稿に失敗しました"
+        );
+      }
+
+      alert("感想を投稿しました！");
+
+      setComment("");
+      setShowCommentModal(false);
+
+      /*
+      * 投稿後に研究室チャットへ移動する場合
+      */
+      router.replace(`/chat/${targetRoom.id}`);
+    } catch (error) {
+      console.error("感想投稿エラー:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "感想の投稿に失敗しました"
+      );
+    } finally {
+      setSendingComment(false);
+    }
+  };
 
   const visitedSpots = passport.stamps.map((stamp) => stamp.spotName);
 
@@ -747,6 +895,162 @@ export default function DashboardPage() {
             >
               閉じる
             </button>
+          </div>
+        </div>
+      )}
+
+      {showCommentModal && (
+        <div
+          onClick={() => {
+            setShowCommentModal(false);
+            router.replace("/dashboard");
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "16px",
+            zIndex: 1000,
+          }}
+        >
+          {/* モーダル本体 */}
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              backgroundColor: "#ffffff",
+              borderRadius: "22px",
+              padding: "24px",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              style={{
+                textAlign: "center",
+                marginBottom: "24px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "48px",
+                  marginBottom: "12px",
+                }}
+              >
+                🎉
+              </div>
+
+              <h2
+                style={{
+                  margin: "0 0 12px",
+                  color: "#0f172a",
+                }}
+              >
+                スタンプ獲得！
+              </h2>
+
+              <p
+                style={{
+                  color: "#475569",
+                  lineHeight: 1.8,
+                  margin: 0,
+                }}
+              >
+                <strong>{spotName}</strong>
+                へ来てくださりありがとうございます！
+                <br />
+                印象に残ったことや感想を書いてみませんか？
+              </p>
+            </div>
+
+            <textarea
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              placeholder="例）先生が優しく説明してくれた！研究内容が面白かった！"
+              style={{
+                width: "100%",
+                minHeight: "140px",
+                padding: "14px",
+                borderRadius: "14px",
+                border: "1px solid #cbd5e1",
+                resize: "vertical",
+                fontSize: "15px",
+                lineHeight: 1.6,
+                boxSizing: "border-box",
+                marginBottom: "12px",
+                outline: "none",
+              }}
+            />
+
+            <p
+              style={{
+                margin: "0 0 20px",
+                color: "#64748b",
+                fontSize: "13px",
+                lineHeight: 1.6,
+              }}
+            >
+              投稿した感想は、この研究室のチャットで他の参加者と共有されます。
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleCommentSubmit}
+                disabled={sendingComment}
+                style={{
+                  flex: "1 1 180px",
+                  padding: "14px",
+                  borderRadius: "999px",
+                  border: "none",
+                  backgroundColor: sendingComment
+                    ? "#93c5fd"
+                    : "#2563eb",
+                  color: "#ffffff",
+                  fontWeight: "bold",
+                  fontSize: "15px",
+                  cursor: sendingComment
+                    ? "not-allowed"
+                    : "pointer",
+                }}
+              >
+                {sendingComment ? "送信中..." : "送信"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCommentModal(false);
+                  setComment("");
+                  router.replace("/dashboard");
+                }}
+                style={{
+                  flex: "1 1 180px",
+                  padding: "14px",
+                  borderRadius: "999px",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#ffffff",
+                  color: "#334155",
+                  fontWeight: "bold",
+                  fontSize: "15px",
+                  cursor: "pointer",
+                }}
+              >
+                あとで書く
+              </button>
+            </div>
           </div>
         </div>
       )}

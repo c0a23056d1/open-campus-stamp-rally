@@ -286,7 +286,7 @@ export default function StartPage() {
     } catch (error) {
       console.error(
         "Web3認証準備処理に失敗しました:",
-        error instanceof Error ? error.message : "Unknown error"
+        error
       );
 
       setErrorMessage(
@@ -294,6 +294,7 @@ export default function StartPage() {
           ? error.message
           : "スタンプラリーの準備に失敗しました"
       );
+
 
       setStatusMessage("");
     } finally {
