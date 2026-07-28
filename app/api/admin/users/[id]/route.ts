@@ -14,6 +14,7 @@ export async function DELETE(
   _request: Request,
   context: RouteContext
 ) {
+  console.log("===== DELETE USER API START =====");
   try {
     await requireAdmin();
 
