@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 
-export const runtime = "nodejs";
-
 export async function GET() {
   try {
     const user = await getCurrentUser();
@@ -10,15 +8,14 @@ export async function GET() {
     if (!user) {
       return NextResponse.json(
         {
-          message: "ログインしていません",
+          authenticated: false,
         },
-        {
-          status: 401,
-        }
+        { status: 401 }
       );
     }
 
     return NextResponse.json({
+      authenticated: true,
       user: {
         id: user.id,
         name: user.name,
@@ -26,18 +23,13 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error(
-      "ユーザー情報の取得に失敗しました:",
-      error
-    );
+    console.error("セッション確認エラー:", error);
 
     return NextResponse.json(
       {
-        message: "ユーザー情報の取得に失敗しました",
+        authenticated: false,
       },
-      {
-        status: 500,
-      }
+      { status: 401 }
     );
   }
 }

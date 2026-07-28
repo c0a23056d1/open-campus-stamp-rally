@@ -1,16 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
 import {
+  FormEvent,
+  useEffect,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
+
+import {
+  decryptPrivateKey,
   encryptPrivateKey,
   validatePin,
 } from "@/lib/auth/encryption";
-import { saveWallet, hasWallet } from "@/lib/auth/indexedDb";
-// import {
-//   generateClientSymbolWallet,
-//   signAuthenticationMessage,
-// } from "@/lib/auth/clientWallet";
+
+import {
+  // getWallet,
+  hasWallet,
+  saveWallet,
+} from "@/lib/auth/indexedDb";
 
 type ChallengeResponse = {
   message: string;
@@ -24,11 +31,53 @@ export default function StartPage() {
   const [pin, setPin] = useState("");
   const [pinConfirmation, setPinConfirmation] = useState("");
 
+  const [hasExistingWallet, setHasExistingWallet] = useState(false);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
 
   const router = useRouter();
+
+  useEffect(() => {
+    const initializeStartPage = async () => {
+      try {
+        const sessionResponse = await fetch(
+          "api/auth/me",
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
+        if (sessionResponse.ok) {
+          router.replace("/dashboard");
+          router.refresh();
+          return;
+        }
+
+        const walletExists = await hasWallet();
+        setHasExistingWallet(walletExists);
+      } catch (error) {
+        console.error(
+          "ログイン状態の確認に失敗しました",
+          error
+        );
+
+        try {
+          const walletExists = await hasWallet();
+          setHasExistingWallet(walletExists);
+        } catch {
+          setHasExistingWallet(false);
+        }
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+
+    initializeStartPage();
+  }, [router]);
 
   const handleStart = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
