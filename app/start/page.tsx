@@ -41,6 +41,9 @@ export default function StartPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   const router = useRouter();
+  const isStartDisabled =
+  isProcessing ||
+  (!hasExistingWallet && !researchConsent);
 
   useEffect(() => {
     const initializeStartPage = async () => {
