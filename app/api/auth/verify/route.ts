@@ -13,6 +13,7 @@ type VerifyRequestBody = {
   walletAddress?: unknown;
   publicKey?: unknown;
   name?: unknown;
+  researchConsent?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -45,33 +46,38 @@ export async function POST(request: Request) {
       typeof body.name === "string"
         ? body.name.trim()
         : "";
+    const researchConsent =
+      body.researchConsent === true;
+  if (
+    !challengeId ||
+    !signatureHex ||
+    !walletAddress ||
+    !publicKeyHex
+  ) {
+    return NextResponse.json(
+      {
+        message: "認証に必要な情報が不足しています",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
 
-    if (
-      !challengeId ||
-      !signatureHex ||
-      !walletAddress ||
-      !publicKeyHex
-    ) {
-      return NextResponse.json(
-        {
-          message: "認証に必要な情報が不足しています",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    if (name && (name.length < 1 || name.length > 30)) {
-      return NextResponse.json(
-        {
-          message: "ニックネームは1文字以上30文字以下で入力してください",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
+  /*
+  * nameとresearchConsentは新規ユーザー作成時に確認する。
+  * 登録済みユーザーの復元ログインでは送信されない。
+  */
+  if (name && (name.length < 1 || name.length > 30)) {
+    return NextResponse.json(
+      {
+        message: "ニックネームは1文字以上30文字以下で入力してください",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
 
     if (!/^[0-9A-F]{64}$/.test(publicKeyHex)) {
       return NextResponse.json(
@@ -252,10 +258,6 @@ export async function POST(request: Request) {
         });
 
       if (existingWallet) {
-        /*
-         * 登録済みウォレットでは、
-         * 保存済み公開鍵とも一致することを確認する。
-         */
         if (
           existingWallet.symbolPublicKey.toUpperCase() !==
           publicKeyHex
@@ -263,22 +265,33 @@ export async function POST(request: Request) {
           throw new Error("PUBLIC_KEY_MISMATCH");
         }
 
+        /*
+        * 既に同意済みのユーザーは通常の復元ログインを許可する。
+        * 過去に登録され、consentAtがないユーザーは、
+        * 同意なしで自動登録しない。
+        */
+        if (!existingWallet.user.consentAt) {
+          throw new Error("CONSENT_REQUIRED");
+        }
+
         return existingWallet.user;
       }
 
-      /*
-       * Web3方式ではemail、passwordHash、
-       * encryptedPrivateKeyをDBへ保存しない。
-       */
       if (!name) {
-        throw new Error("USER_NOT_FOUND");
+        throw new Error("NAME_REQUIRED");
       }
+
+      if (!researchConsent) {
+        throw new Error("CONSENT_REQUIRED");
+      }
+
 
       isNewUser = true;
 
       return transaction.user.create({
         data: {
           name,
+          consentAt: new Date(),
           wallet: {
             create: {
               symbolAddress: walletAddress,
@@ -363,7 +376,35 @@ export async function POST(request: Request) {
     }
 
     console.error("Web3署名認証に失敗しました:", error);
+    
+    if (
+      error instanceof Error &&
+      error.message === "NAME_REQUIRED"
+    ) {
+      return NextResponse.json(
+        {
+          message: "新規登録にはニックネームが必要です",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
+    if (
+      error instanceof Error &&
+      error.message === "CONSENT_REQUIRED"
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "研究参加への同意が確認できません。新規登録画面から研究説明を確認してください",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
     if (
       error instanceof Error &&
       error.message === "USER_NOT_FOUND"
