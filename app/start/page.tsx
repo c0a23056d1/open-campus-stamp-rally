@@ -15,6 +15,7 @@ import {
 
 import {
   // getWallet,
+  loadWallet,
   hasWallet,
   saveWallet,
 } from "@/lib/auth/indexedDb";
@@ -296,8 +297,101 @@ export default function StartPage() {
       setIsProcessing(false);
     }
   };
-  const isStartDisabled = isProcessing || !researchConsent;
-  return (
+
+  const handleRestore = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+    event?.preventDefault();
+
+    setErrorMessage("");
+    setStatusMessage("");
+
+    try {
+      validatePin(pin);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "PINが正しくありません"
+      );
+      return;
+    }
+    setIsProcessing(true);
+
+    try {
+      const wallet = await loadWallet();
+
+      if (!wallet) {
+        throw new Error("保存済みウォレットがありません");
+      }
+
+      const privateKey = await decryptPrivateKey(wallet, pin);
+
+      const {
+        signAuthenticationMessage,
+      } = await import("@/lib/auth/clientWallet");
+
+      const challengeResponse = await fetch("/api/auth/challenge", 
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            walletAddress: wallet.symbolAddress,
+            publicKey: wallet.symbolPublicKey,
+          }),
+        }
+      );
+
+      const challenge = await challengeResponse.json();
+
+      const signature = signAuthenticationMessage(
+        privateKey,
+        challenge.message
+      );
+
+      const verifyResponse = await fetch(
+        "/api/auth/verify",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            challengeId: challenge.challengeId,
+            signature,
+            walletAddress: wallet.symbolAddress,
+            publicKey: wallet.symbolPublicKey,
+          }),
+        }
+      );
+
+      if (!verifyResponse.ok) {
+        const error = await verifyResponse.json();
+        throw new Error(error.message);
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "PIN認証に失敗しました"
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (checkingSession) {
+    return (
+      "ローディング"
+    );
+  }
+  return ( 
     <main
       style={{
         maxWidth: "520px",
@@ -330,7 +424,11 @@ export default function StartPage() {
             fontSize: "28px",
           }}
         >
-          スタンプラリーを始める！
+          {
+          hasExistingWallet
+          ? "スタンプラリーを再開"
+          : "スタンプラリーを始める"
+          }
         </h1>
 
         <p
@@ -340,40 +438,51 @@ export default function StartPage() {
             color: "#4b5563",
           }}
         >
-          この端末にデジタルパスポートを作成します。
-          設定したPINは、この端末内のウォレットを保護するために使用します。
+          {
+          hasExistingWallet
+            ? "パスワードを入力してスタンプラリーを再開します"
+            : "新しいデジタルパスポートを作成します。設定したパスワードは、この端末内のウォレットを保護するために使用します。"
+          }
         </p>
 
-        <form onSubmit={handleStart}>
-          <label
-            htmlFor="nickname"
-            style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: 700,
-            }}
-          >
-            ニックネーム
-          </label>
-
-          <input
-            id="nickname"
-            type="text"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            maxLength={30}
-            autoComplete="nickname"
-            disabled={isProcessing}
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              padding: "13px 14px",
-              marginBottom: "20px",
-              border: "1px solid #b8c5d8",
-              borderRadius: "10px",
-              fontSize: "16px",
-            }}
-          />
+        <form 
+          onSubmit={
+            hasExistingWallet
+              ? handleRestore
+              : handleStart
+          }
+        >
+          
+            {!hasExistingWallet && (
+              <>
+                <label
+                  htmlFor="nickname"
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: 700,
+                  }}
+                >ニックネーム</label>
+                <input
+                  id="nickname"
+                  type="text"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  maxLength={30}
+                  autoComplete="nickname"
+                  disabled={isProcessing}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "13px 14px",
+                    marginBottom: "20px",
+                    border: "1px solid #b8c5d8",
+                    borderRadius: "10px",
+                    fontSize: "16px",
+                  }}
+                />
+              </>
+            )}
 
           <label
             htmlFor="pin"
@@ -383,7 +492,7 @@ export default function StartPage() {
               fontWeight: 700,
             }}
           >
-            PIN（6～12桁）
+            パスワード（6～12桁）
           </label>
 
           <input
@@ -408,42 +517,42 @@ export default function StartPage() {
               fontSize: "16px",
             }}
           />
-
-          <label
-            htmlFor="pinConfirmation"
-            style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: 700,
-            }}
-          >
-            PIN確認
-          </label>
-
-          <input
-            id="pinConfirmation"
-            type="password"
-            inputMode="numeric"
-            value={pinConfirmation}
-            onChange={(event) =>
-              setPinConfirmation(
-                event.target.value.replace(/\D/g, "")
-              )
-            }
-            minLength={6}
-            maxLength={12}
-            autoComplete="new-password"
-            disabled={isProcessing}
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              padding: "13px 14px",
-              marginBottom: "24px",
-              border: "1px solid #b8c5d8",
-              borderRadius: "10px",
-              fontSize: "16px",
-            }}
-          />
+            {!hasExistingWallet && (
+              <>
+                <label
+                  htmlFor="pinConfirmation"
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: 700,
+                  }}
+                >
+                  パスワード確認
+                </label>
+                <input
+                  id="pinConfirmation"
+                  type="password"
+                  inputMode="numeric"
+                  value={pinConfirmation}
+                  onChange={(event) =>
+                    setPinConfirmation(
+                      event.target.value.replace(/\D/g, "")
+                    )
+                  }
+                  minLength={6}
+                  maxLength={12}
+                  autoComplete="new-password"
+                  disabled={isProcessing}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "13px 14px",
+                    marginBottom: "24px",
+                    border: "1px solid #b8c5d8",
+                    borderRadius: "10px",
+                    fontSize: "16px",
+                  }}
+                />
           <section
             aria-labelledby="research-consent-heading"
             style={{
@@ -636,7 +745,9 @@ export default function StartPage() {
               上記の説明を読み、研究内容およびデータの取扱いを理解したうえで、
               本研究への参加に自由意思で同意します。
             </span>
-          </label>
+          </label>              </>
+            )}
+
           {errorMessage && (
             <p
               role="alert"
@@ -696,7 +807,7 @@ export default function StartPage() {
             color: "#64748b",
           }}
         >
-          現在の試作版では、ブラウザデータを削除した場合や端末を変更した場合、
+          現在のシステムでは、ブラウザデータを削除した場合や端末を変更した場合、
           デジタルパスポートを復元できません。
         </p>
       </section>
