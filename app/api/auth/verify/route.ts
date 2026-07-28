@@ -13,6 +13,7 @@ type VerifyRequestBody = {
   walletAddress?: unknown;
   publicKey?: unknown;
   name?: unknown;
+  researchConsent?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -44,7 +45,8 @@ export async function POST(request: Request) {
       typeof body.name === "string"
         ? body.name.trim()
         : "";
-
+    const researchConsent =
+      body.researchConsent === true;
     if (
       !challengeId ||
       !signatureHex ||
@@ -55,6 +57,17 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           message: "認証に必要な情報が不足しています",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!researchConsent) {
+      return NextResponse.json(
+        {
+          message: "研究参加への同意が必要です",
         },
         {
           status: 400,
@@ -262,7 +275,17 @@ export async function POST(request: Request) {
         ) {
           throw new Error("PUBLIC_KEY_MISMATCH");
         }
-
+        // 初回同意日時が未登録なら保存
+        if (!existingWallet.user.consentAt) {
+          await transaction.user.update({
+            where: {
+              id: existingWallet.user.id,
+            },
+            data: {
+              consentAt: new Date(),
+            },
+          });
+        }
         return existingWallet.user;
       }
 
@@ -273,6 +296,7 @@ export async function POST(request: Request) {
       return transaction.user.create({
         data: {
           name,
+          consentAt: new Date(),
           wallet: {
             create: {
               symbolAddress: walletAddress,

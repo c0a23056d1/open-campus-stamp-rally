@@ -30,6 +30,7 @@ export default function StartPage() {
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [pinConfirmation, setPinConfirmation] = useState("");
+  const [researchConsent, setResearchConsent] = useState(false);
 
   const [hasExistingWallet, setHasExistingWallet] = useState(false);
 
@@ -44,7 +45,7 @@ export default function StartPage() {
     const initializeStartPage = async () => {
       try {
         const sessionResponse = await fetch(
-          "api/auth/me",
+          "/api/auth/me",
           {
             method: "GET",
             credentials: "include",
@@ -84,7 +85,7 @@ export default function StartPage() {
 
     setErrorMessage("");
     setStatusMessage("");
-
+   
     const trimmedName = name.trim();
 
     if (trimmedName.length < 1 || trimmedName.length > 30) {
@@ -96,6 +97,13 @@ export default function StartPage() {
 
     if (pin !== pinConfirmation) {
       setErrorMessage("PINとPIN確認が一致していません");
+      return;
+    }
+
+    if (!researchConsent) {
+      setErrorMessage(
+        "研究説明を確認し、研究参加への同意にチェックしてください"
+      );
       return;
     }
 
@@ -202,6 +210,7 @@ export default function StartPage() {
           walletAddress: wallet.symbolAddress,
           publicKey: wallet.symbolPublicKey,
           name: trimmedName,
+          researchConsent,
         }),
       });
 
@@ -235,11 +244,9 @@ export default function StartPage() {
       }
 
       /*
-       * 現在はverify APIが未実装なので、
-       * 署名作成まで成功した時点でIndexedDBへ保存する。
-       *
-       * verify API実装後は、認証成功後に保存する形へ変更する。
-       */
+      * 署名検証とセッション作成に成功した後、
+      * 暗号化したウォレット情報をIndexedDBへ保存する。
+      */
       await saveWallet({
         symbolAddress: wallet.symbolAddress,
         symbolPublicKey: wallet.symbolPublicKey,
@@ -289,7 +296,7 @@ export default function StartPage() {
       setIsProcessing(false);
     }
   };
-
+  const isStartDisabled = isProcessing || !researchConsent;
   return (
     <main
       style={{
@@ -437,7 +444,199 @@ export default function StartPage() {
               fontSize: "16px",
             }}
           />
+          <section
+            aria-labelledby="research-consent-heading"
+            style={{
+              marginBottom: "20px",
+              border: "1px solid #cbd5e1",
+              borderRadius: "12px",
+              background: "#f8fafc",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "16px 16px 8px",
+              }}
+            >
+              <h2
+                id="research-consent-heading"
+                style={{
+                  margin: "0 0 10px",
+                  fontSize: "18px",
+                }}
+              >
+                研究参加について
+              </h2>
 
+              <p
+                style={{
+                  margin: 0,
+                  color: "#475569",
+                  fontSize: "14px",
+                  lineHeight: 1.7,
+                }}
+              >
+                以下の説明を最後まで確認したうえで、研究への参加に同意する場合は
+                チェックを入れてください。
+              </p>
+            </div>
+
+            <div
+              tabIndex={0}
+              style={{
+                maxHeight: "320px",
+                overflowY: "auto",
+                padding: "8px 16px 16px",
+                color: "#334155",
+                fontSize: "14px",
+                lineHeight: 1.8,
+              }}
+            >
+              <h3 style={{ fontSize: "15px", marginBottom: "6px" }}>
+                ■研究の目的
+              </h3>
+
+              <p>
+                本アプリは、東京工科大学コンピュータサイエンス学部
+                細野研究室が実施する「Web3技術を活用した
+                オープンキャンパススタンプラリーシステム」に関する
+                卒業研究で利用します。
+              </p>
+
+              <p>
+                本研究では、オープンキャンパスにおける参加者の体験を
+                動的NFT（dNFT）として記録し、行動履歴の永続保持・
+                可視化・活用の有効性を検証します。
+                また、DAOの仕組みを利用した投票、提案、チャット等を通じて、
+                参加者同士や大学との継続的な交流および意見反映の可能性を
+                検証します。
+              </p>
+
+              <h3 style={{ fontSize: "15px", marginBottom: "6px" }}>
+                ■取得する情報
+              </h3>
+
+              <p>
+                本研究では、Symbolウォレットアドレス、ニックネーム、
+                研究室の訪問履歴、スタンプ取得履歴、dNFT情報、
+                研究室評価、アンケート回答、DAO機能の利用履歴、
+                システム利用ログ等を取得します。
+                氏名、住所、電話番号、メールアドレスなど、
+                個人を直接特定する情報は取得しません。
+              </p>
+
+              <h3 style={{ fontSize: "15px", marginBottom: "6px" }}>
+                ■研究参加の任意性
+              </h3>
+
+              <p>
+                本研究への参加は任意です。参加しない場合や、
+                途中で参加を取りやめた場合でも、不利益を受けることはありません。
+                同意した後でも、いつでも研究参加を撤回できます。
+              </p>
+
+              <h3 style={{ fontSize: "15px", marginBottom: "6px" }}>
+                ■同意の撤回
+              </h3>
+
+              <p>
+                研究参加への同意を撤回する場合は、東京工科大学
+                コンピュータサイエンス学部 細野研究室
+                （研究棟A1109）までご連絡ください。
+              </p>
+
+              <p>
+                ご本人からの申し出を確認後、サーバー上で管理する
+                アカウントおよび研究データは削除・破棄します。
+                ただし、ブロックチェーン上に既に記録されたデータは、
+                技術的な特性上削除できません。
+              </p>
+
+              <p>
+                また、匿名化または統計処理されたデータが既に卒業研究、
+                学会発表、論文等で公表されている場合は、
+                公表済みの内容を取り消せないことがあります。
+              </p>
+
+              <h3 style={{ fontSize: "15px", marginBottom: "6px" }}>
+                ■データの利用と公表
+              </h3>
+
+              <p>
+                取得したデータは、本研究の目的の範囲内でのみ利用します。
+                研究成果を卒業論文、学会発表、論文等で公表する場合は、
+                個人を特定できないよう匿名化または統計的に処理します。
+              </p>
+
+              <h3 style={{ fontSize: "15px", marginBottom: "6px" }}>
+                ■外部サービス
+              </h3>
+
+              <p>
+                本システムでは、Vercel、Neon PostgreSQL、
+                Pinata（IPFS）、Symbolブロックチェーン等の
+                外部サービスを利用します。
+              </p>
+
+              <h3 style={{ fontSize: "15px", marginBottom: "6px" }}>
+                ■想定されるリスクと対応
+              </h3>
+
+              <p>
+                通信料が発生する可能性、通信障害等により一時的に
+                サービスを利用できない可能性、利用履歴等から個人が
+                推測される可能性があります。
+                取得する情報は必要最小限とし、適切なアクセス制御を行います。
+              </p>
+
+              <p>
+                万一、情報漏えい等の事故が発生した場合は、
+                速やかに大学へ報告し、大学の規程に従って対応します。
+              </p>
+            </div>
+          </section>
+
+          <label
+            htmlFor="researchConsent"
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px",
+              marginBottom: "24px",
+              padding: "14px",
+              border: researchConsent
+                ? "1px solid #2563eb"
+                : "1px solid #cbd5e1",
+              borderRadius: "10px",
+              background: researchConsent ? "#eff6ff" : "#ffffff",
+              cursor: isProcessing ? "not-allowed" : "pointer",
+              lineHeight: 1.7,
+            }}
+          >
+            <input
+              id="researchConsent"
+              name="researchConsent"
+              type="checkbox"
+              checked={researchConsent}
+              onChange={(event) =>
+                setResearchConsent(event.target.checked)
+              }
+              disabled={isProcessing}
+              required
+              style={{
+                width: "18px",
+                height: "18px",
+                marginTop: "3px",
+                flexShrink: 0,
+              }}
+            />
+
+            <span>
+              上記の説明を読み、研究内容およびデータの取扱いを理解したうえで、
+              本研究への参加に自由意思で同意します。
+            </span>
+          </label>
           {errorMessage && (
             <p
               role="alert"
@@ -470,22 +669,22 @@ export default function StartPage() {
 
           <button
             type="submit"
-            disabled={isProcessing}
+            disabled={isStartDisabled}
             style={{
               width: "100%",
               padding: "14px 18px",
               border: "none",
               borderRadius: "999px",
-              background: isProcessing ? "#94a3b8" : "#2563eb",
+              background: isStartDisabled ? "#94a3b8" : "#2563eb",
               color: "#ffffff",
               fontSize: "16px",
               fontWeight: 700,
-              cursor: isProcessing ? "not-allowed" : "pointer",
+              cursor: isStartDisabled ? "not-allowed" : "pointer",
             }}
           >
             {isProcessing
               ? "準備しています……"
-              : "スタンプラリーを始める"}
+              : "同意してスタンプラリーを始める"}
           </button>
         </form>
 
