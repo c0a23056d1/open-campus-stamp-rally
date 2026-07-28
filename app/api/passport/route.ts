@@ -58,6 +58,9 @@ export async function GET() {
         id: user.id,
         name: user.name || "名無し",
         email: user.email ?? "メール未登録",
+        voteFeatureViewedAt: user.voteFeatureViewedAt,
+        proposalFeatureViewedAt:
+          user.proposalFeatureViewedAt,
       },
       wallet: user.wallet
         ? {

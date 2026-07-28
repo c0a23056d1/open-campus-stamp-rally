@@ -117,6 +117,25 @@ export async function POST(req: Request) {
       );
     }
 
+    const currentNft = await prisma.nFT.findUnique({
+      where: {
+        userId: currentUser.id,
+      },
+    });
+
+    if (!currentNft) {
+      return NextResponse.json(
+        {
+          message: "NFT情報が見つかりません",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const previousLevel = currentNft.level;
+
     await prisma.stampLog.create({
       data: {
         userId: currentUser.id,
@@ -135,6 +154,22 @@ export async function POST(req: Request) {
     });
 
     const { level, title } = calculateLevel(stampCount);
+
+    const newLevel = level;
+    const didLevelUp = newLevel > previousLevel;
+
+    let unlockedFeature:
+      | "vote"
+      | "proposal"
+      | null = null;
+
+    if (didLevelUp && newLevel === 2) {
+      unlockedFeature = "vote";
+    }
+
+    if (didLevelUp && newLevel === 3) {
+      unlockedFeature = "proposal";
+    }
 
     const stampLogs = await prisma.stampLog.findMany({
       where: {
@@ -198,23 +233,6 @@ export async function POST(req: Request) {
       "spots",
       spots.map((item) => item.spotName)
     );
-
-    const currentNft = await prisma.nFT.findUnique({
-      where: {
-        userId: currentUser.id,
-      },
-    });
-
-    if (!currentNft) {
-      return NextResponse.json(
-        {
-          message: "NFT情報が見つかりません",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
 
     const favoriteLabs =
       await prisma.spotRating.findMany({
@@ -341,6 +359,12 @@ export async function POST(req: Request) {
         id: spot.id,
         spotName: spot.spotName,
         floor: spot.floor,
+      },
+      levelUp: {
+        didLevelUp,
+        previousLevel,
+        newLevel,
+        unlockedFeature,
       },
       nft: updatedNft,
       metadata: dnftMetadata,
