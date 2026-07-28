@@ -16,6 +16,7 @@ type VerifyRequestBody = {
 };
 
 export async function POST(request: Request) {
+  let isNewUser = false;
   console.log("===== VERIFY API START =====");
   try {
     const body = (await request.json()) as VerifyRequestBody;
@@ -49,8 +50,7 @@ export async function POST(request: Request) {
       !challengeId ||
       !signatureHex ||
       !walletAddress ||
-      !publicKeyHex ||
-      !name
+      !publicKeyHex
     ) {
       return NextResponse.json(
         {
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (name.length < 1 || name.length > 30) {
+    if (name && (name.length < 1 || name.length > 30)) {
       return NextResponse.json(
         {
           message: "ニックネームは1文字以上30文字以下で入力してください",
@@ -270,6 +270,12 @@ export async function POST(request: Request) {
        * Web3方式ではemail、passwordHash、
        * encryptedPrivateKeyをDBへ保存しない。
        */
+      if (!name) {
+        throw new Error("USER_NOT_FOUND");
+      }
+
+      isNewUser = true;
+
       return transaction.user.create({
         data: {
           name,
@@ -302,19 +308,19 @@ export async function POST(request: Request) {
      * 初回作成ユーザーへ初期モザイクを送る。
      * Symbol側の失敗によって認証自体は失敗させない。
      */
-    try {
-      const { issueInitialNftToUser } = await import(
-        "@/lib/symbol/nftIssue"
-      );
+    if (isNewUser) {
+      try {
+        const { issueInitialNftToUser } = await import(
+          "@/lib/symbol/nftIssue"
+        );
 
-      await issueInitialNftToUser(user.id);
-    } catch (issueError) {
-      console.error(
-        "初期NFTのオンチェーン付与に失敗しました:",
-        issueError instanceof Error
-          ? issueError.message
-          : "Unknown error"
-      );
+        await issueInitialNftToUser(user.id);
+      } catch (issueError) {
+        console.error(
+          "初期NFTのオンチェーン付与に失敗しました:",
+          issueError
+        );
+      }
     }
 
     return NextResponse.json({
@@ -322,6 +328,7 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         name: user.name,
+        isNewUser,
       },
     });
   } catch (error) {
@@ -356,6 +363,21 @@ export async function POST(request: Request) {
     }
 
     console.error("Web3署名認証に失敗しました:", error);
+
+    if (
+      error instanceof Error &&
+      error.message === "USER_NOT_FOUND"
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "このウォレットは登録されいません",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
 
     if (error instanceof Error) {
         console.error("エラー名:", error.name);
