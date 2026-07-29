@@ -19,6 +19,12 @@ model User {
   createdAt    DateTime @default(now())
   consentAt    DateTime?
 
+  // 投票画面を初めて開いた日時
+  voteFeatureViewedAt DateTime?
+
+  // 提案画面を初めて開いた日時
+  proposalFeatureViewedAt DateTime?
+
   wallet    Wallet?
   nft       NFT?
   stampLogs StampLog[]

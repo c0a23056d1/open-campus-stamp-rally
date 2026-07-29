@@ -98,10 +98,38 @@ export default function ScanPage() {
         return;
       }
 
-      router.replace(
-        `/dashboard?newStamp=1&spotId=${data.spot.id}&spotName=${encodeURIComponent(data.spot.spotName)}`
-      );
+      // router.replace(
+      //   `/dashboard?newStamp=1&spotId=${data.spot.id}&spotName=${encodeURIComponent(data.spot.spotName)}`
+      // );
+      // router.refresh();
+
+      const params = new URLSearchParams();
+      params.set("newStamp", "1");
+      params.set("spotId", String(data.spot.id));
+      params.set("spotName", data.spot.spotName);
+
+      if (data.levelUp?.didLevelUp) {
+        params.set("levelUp", "1");
+        params.set(
+          "previousLevel",
+          String(data.levelUp.previousLevel)
+        );
+        params.set(
+          "newLevel",
+          String(data.levelUp.newLevel)
+        );
+
+        if (data.levelUp.unlockedFeature) {
+          params.set(
+            "unlockedFeature",
+            data.levelUp.unlockedFeature
+          );
+        }
+      }
+
+      router.replace(`/dashboard?${params.toString()}`);
       router.refresh();
+
     } catch (error) {
       console.error("スタンプ送信エラー:", error);
 

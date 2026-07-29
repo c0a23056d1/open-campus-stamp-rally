@@ -9,6 +9,8 @@ type PassportData = {
     id: number;
     name: string;
     email: string;
+    voteFeatureViewedAt: string | null;
+    proposalFeatureViewedAt: string | null;
   };
   wallet: {
     symbolAddress: string;
@@ -47,6 +49,20 @@ export default function DashboardPage() {
   const searchParams = useSearchParams();
   const isNewStamp = searchParams.get("newStamp") === "1";
   const spotId = Number(searchParams.get("spotId"));
+
+  const didLevelUp =
+    searchParams.get("levelUp") === "1";
+
+  const previousLevel = Number(
+    searchParams.get("previousLevel")
+  );
+
+  const newLevel = Number(
+    searchParams.get("newLevel")
+  );
+
+  const unlockedFeature =
+    searchParams.get("unlockedFeature");
 
   const spotName = searchParams.get("spotName") ?? "";
   
@@ -101,6 +117,86 @@ export default function DashboardPage() {
       setShowCommentModal(true);
     }
   }, [isNewStamp]);
+
+  const handleOpenFeature = async (
+    feature: "vote" | "proposal"
+  ) => {
+    try {
+      const res = await fetch(
+        "/api/features/viewed",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            feature,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (res.status === 401) {
+        alert(
+          data.message ??
+            "認証の有効期限が切れました。"
+        );
+
+        router.replace("/start");
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error(
+          data.message ??
+            "閲覧状態の更新に失敗しました"
+        );
+      }
+
+      setPassport((prev) => {
+        if (!prev) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          user: {
+            ...prev.user,
+
+            voteFeatureViewedAt:
+              feature === "vote"
+                ? new Date().toISOString()
+                : prev.user.voteFeatureViewedAt,
+
+            proposalFeatureViewedAt:
+              feature === "proposal"
+                ? new Date().toISOString()
+                : prev.user.proposalFeatureViewedAt,
+          },
+        };
+      });
+
+      if (feature === "vote") {
+        router.push("/proposals");
+        return;
+      }
+
+      router.push("/proposals");
+    } catch (error) {
+      console.error(
+        "機能画面への移動エラー:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "画面の移動に失敗しました"
+      );
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -348,8 +444,8 @@ export default function DashboardPage() {
       )
     : null;
 
-  const passportDesign =
-    stampCount >= 7
+  const passportDesign = stampCount >= 7
+  
       ? {
           level: 4,
           label: "Level 4",
@@ -398,6 +494,15 @@ export default function DashboardPage() {
           badgeColor: "#6b7280",
           description: "まずは研究室を訪問してスタンプを集めましょう。",
         };
+  const currentLevel = passport.nft?.level ?? 0;
+
+  const shouldShowVoteNotification =
+    currentLevel >= 2 &&
+    passport.user.voteFeatureViewedAt === null;
+
+  const shouldShowProposalNotification =
+    currentLevel >= 3 &&
+    passport.user.proposalFeatureViewedAt === null;
 
   return (
     <div
@@ -482,6 +587,60 @@ export default function DashboardPage() {
             </button>
           </div>
         </header>
+
+        {shouldShowVoteNotification && (
+          <section
+            style={{
+              marginBottom: "20px",
+              padding: "18px",
+              borderRadius: "18px",
+              backgroundColor: "#f5f3ff",
+              border: "2px solid #8b5cf6",
+            }}
+          >
+            <h2>🗳 投票機能が解放されました！</h2>
+
+            <p>
+              オープンキャンパスに関する投票へ参加できます。
+            </p>
+
+            <button
+              onClick={() => {
+                void handleOpenFeature("vote");
+              }}
+              style={styles.primaryButton}
+            >
+              投票へ
+            </button>
+          </section>
+        )}
+
+        {shouldShowProposalNotification && (
+          <section
+            style={{
+              marginBottom: "20px",
+              padding: "18px",
+              borderRadius: "18px",
+              backgroundColor: "#fffbeb",
+              border: "2px solid #f59e0b",
+            }}
+          >
+            <h2>💡 提案機能が解放されました！</h2>
+
+            <p>
+              新しい投票テーマを提案できます。
+            </p>
+
+            <button
+              onClick={() => {
+                void handleOpenFeature("proposal");
+              }}
+              style={styles.primaryButton}
+            >
+              提案へ
+            </button>
+          </section>
+        )}
 
         <div
           style={{
@@ -636,7 +795,7 @@ export default function DashboardPage() {
                 <button style={styles.primaryButton} onClick={() => router.push("/scan")}>
                   QRスタンプ取得
                 </button>
-                <button style={styles.secondaryButton} onClick={() => router.push("/proposals")}>
+                <button style={styles.secondaryButton} onClick={() => void handleOpenFeature("vote")}>
                   投票画面
                 </button>
                 <button style={styles.secondaryButton} onClick={() => router.push("/chat")}>
@@ -967,6 +1126,101 @@ export default function DashboardPage() {
                 <br />
                 印象に残ったことや感想を書いてみませんか？
               </p>
+
+              {didLevelUp && (
+                  <div
+                    style={{
+                      marginTop: "24px",
+                      padding: "18px",
+                      borderRadius: "16px",
+                      backgroundColor: "#fef3c7",
+                      border: "2px solid #f59e0b",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "34px",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      🎉
+                    </div>
+
+                    <h3
+                      style={{
+                        margin: 0,
+                        color: "#b45309",
+                      }}
+                    >
+                      LEVEL UP !!
+                    </h3>
+
+                    <p
+                      style={{
+                        marginTop: "10px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Level {previousLevel}
+                      {" → "}
+                      Level {newLevel}
+                    </p>
+
+                    {unlockedFeature === "vote" && (
+                      <>
+                        <p>
+                          🗳 投票機能が解放されました！
+                        </p>
+
+                        <button
+                          onClick={() => {
+                            void handleOpenFeature("vote");
+                          }}
+                          style={{
+                            marginTop: "10px",
+                            padding: "12px 22px",
+                            borderRadius: "999px",
+                            border: "none",
+                            backgroundColor: "#f59e0b",
+                            color: "#fff",
+                            fontWeight: "bold",
+                            cursor: "pointer",
+                          }}
+                        >
+                          投票へ
+                        </button>
+                      </>
+                    )}
+
+                    {unlockedFeature === "proposal" && (
+                      <>
+                        <p>
+                          💡 提案機能が解放されました！
+                        </p>
+
+                        <button
+                          onClick={() => {
+                            void handleOpenFeature("proposal");
+                          }}
+                          style={{
+                            marginTop: "10px",
+                            padding: "12px 22px",
+                            borderRadius: "999px",
+                            border: "none",
+                            backgroundColor: "#f59e0b",
+                            color: "#fff",
+                            fontWeight: "bold",
+                            cursor: "pointer",
+                          }}
+                        >
+                          提案へ
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
             </div>
 
             <textarea
