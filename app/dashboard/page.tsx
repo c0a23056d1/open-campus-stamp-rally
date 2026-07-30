@@ -11,6 +11,7 @@ type PassportData = {
     email: string;
     voteFeatureViewedAt: string | null;
     proposalFeatureViewedAt: string | null;
+    surveyCompletedAt: string | null;
   };
   wallet: {
     symbolAddress: string;
@@ -546,7 +547,8 @@ export default function DashboardPage() {
     passport.user.proposalFeatureViewedAt === null;
 
   const shouldShowSurveyNotification =
-  currentLevel >= 4;
+    currentLevel >= 4 &&
+    passport.user.surveyCompletedAt === null;
 
   const canSubmitStampFeedback =
     modalRating > 0 &&
