@@ -1,145 +1,83 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-
-  const handleRegister = async () => {
-    try {
-      setLoading(true);
-
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await res.json();
-
-      alert(data.message);
-      router.push("/login");
-    } catch (e) {
-      alert("エラーが発生しました");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>アカウント作成</h1>
-
-        <p style={styles.subtitle}>
-          新規ユーザー登録を行います
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "24px",
+        backgroundColor: "#f8fafc",
+      }}
+    >
+      <section
+        style={{
+          width: "100%",
+          maxWidth: "480px",
+          padding: "32px",
+          borderRadius: "20px",
+          backgroundColor: "#ffffff",
+          border: "1px solid #e5e7eb",
+          boxShadow: "0 12px 32px rgba(0,0,0,0.08)",
+          textAlign: "center",
+        }}
+      >
+        <p
+          style={{
+            margin: "0 0 8px",
+            color: "#2563eb",
+            fontWeight: "bold",
+          }}
+        >
+          Open Campus Passport
         </p>
 
-        <div style={styles.form}>
-          <input
-            style={styles.input}
-            type="text"
-            placeholder="名前"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+        <h1
+          style={{
+            margin: "0 0 16px",
+            fontSize: "28px",
+            color: "#0f172a",
+          }}
+        >
+          新規登録
+        </h1>
 
-          <input
-            style={styles.input}
-            type="email"
-            placeholder="メールアドレス"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+        <p
+          style={{
+            margin: "0 0 24px",
+            color: "#475569",
+            lineHeight: 1.8,
+          }}
+        >
+          このシステムはWeb3認証方式へ移行しました。
+          <br />
+          メールアドレスとパスワードによる新規登録は利用できません。
+        </p>
 
-          <input
-            style={styles.input}
-            type="password"
-            placeholder="パスワード"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <button
-            onClick={handleRegister}
-            style={{
-              ...styles.button,
-              opacity: loading ? 0.6 : 1,
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
-            disabled={loading}
-          >
-            {loading ? "登録中..." : "登録する"}
-          </button>
-        </div>
-      </div>
-    </div>
+        <button
+          type="button"
+          onClick={() => router.push("/start")}
+          style={{
+            width: "100%",
+            padding: "14px 18px",
+            borderRadius: "999px",
+            border: "none",
+            backgroundColor: "#2563eb",
+            color: "#ffffff",
+            fontWeight: "bold",
+            fontSize: "16px",
+            cursor: "pointer",
+          }}
+        >
+          Web3で登録・ログイン
+        </button>
+      </section>
+    </main>
   );
 }
-
-const styles: { [key: string]: React.CSSProperties } = {
-  container: {
-    height: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "linear-gradient(135deg, #667eea, #764ba2)",
-  },
-
-  card: {
-    width: "100%",
-    maxWidth: "380px",
-    padding: "32px",
-    borderRadius: "16px",
-    backgroundColor: "#fff",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-  },
-
-  title: {
-    margin: 0,
-    fontSize: "24px",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-
-  subtitle: {
-    marginTop: "8px",
-    marginBottom: "24px",
-    fontSize: "14px",
-    color: "#666",
-    textAlign: "center",
-  },
-
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-
-  input: {
-    padding: "12px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    fontSize: "14px",
-    outline: "none",
-  },
-
-  button: {
-    marginTop: "12px",
-    padding: "12px",
-    borderRadius: "8px",
-    border: "none",
-    backgroundColor: "#4f46e5",
-    color: "white",
-    fontWeight: "bold",
-    fontSize: "14px",
-    transition: "0.2s",
-  },
-};
