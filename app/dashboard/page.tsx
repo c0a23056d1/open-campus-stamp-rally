@@ -544,7 +544,10 @@ export default function DashboardPage() {
   const shouldShowProposalNotification =
     currentLevel >= 3 &&
     passport.user.proposalFeatureViewedAt === null;
-  
+
+  const shouldShowSurveyNotification =
+  currentLevel >= 4;
+
   const canSubmitStampFeedback =
     modalRating > 0 &&
     comment.trim().length > 0 &&
@@ -685,6 +688,69 @@ export default function DashboardPage() {
             >
               提案へ
             </button>
+          </section>
+        )}
+        {shouldShowSurveyNotification && (
+          <section
+            style={{
+              marginBottom: "20px",
+              padding: "20px",
+              borderRadius: "18px",
+              backgroundColor: "#ecfdf5",
+              border: "2px solid #10b981",
+              boxShadow: "0 8px 24px rgba(16, 185, 129, 0.12)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    margin: "0 0 8px",
+                    color: "#065f46",
+                    fontSize: "21px",
+                  }}
+                >
+                  🎉 スタンプラリーご参加ありがとうございました！
+                </h2>
+
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#475569",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  アンケートのご協力をお願いいたします。
+                  感想やご意見を、今後のオープンキャンパス改善に活用します。
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push("/survey")}
+                style={{
+                  padding: "13px 22px",
+                  borderRadius: "999px",
+                  border: "none",
+                  backgroundColor: "#10b981",
+                  color: "#ffffff",
+                  fontWeight: "bold",
+                  fontSize: "15px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                アンケートはこちら
+              </button>
+            </div>
           </section>
         )}
 
