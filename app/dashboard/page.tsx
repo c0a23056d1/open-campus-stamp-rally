@@ -11,6 +11,7 @@ type PassportData = {
     email: string;
     voteFeatureViewedAt: string | null;
     proposalFeatureViewedAt: string | null;
+    surveyCompletedAt: string | null;
   };
   wallet: {
     symbolAddress: string;
@@ -70,6 +71,7 @@ export default function DashboardPage() {
   const [showGuide, setShowGuide] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [comment, setComment] = useState("");
+  const [modalRating, setModalRating] = useState(0);
 
   const [sendingComment, setSendingComment] = useState(false);
 
@@ -293,6 +295,11 @@ export default function DashboardPage() {
   const handleCommentSubmit = async () => {
     const trimmedComment = comment.trim();
 
+    if (modalRating < 1 || modalRating > 5) {
+      alert("研究室を星1〜5で評価してください");
+      return;
+    }
+
     if (!trimmedComment) {
       alert("感想を入力してください");
       return;
@@ -310,7 +317,41 @@ export default function DashboardPage() {
 
     try {
       setSendingComment(true);
+      const ratingRes = await fetch("/api/spot-ratings", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          spotId,
+          rating: modalRating,
+        }),
+      });
 
+      const ratingData = await ratingRes.json();
+
+      if (ratingRes.status === 401) {
+        alert(
+          ratingData.message ??
+            "認証の有効期限が切れました。もう一度認証してください。"
+        );
+
+        router.replace("/start");
+        return;
+      }
+
+      if (!ratingRes.ok) {
+        throw new Error(
+          ratingData.message ??
+            "研究室評価の保存に失敗しました"
+        );
+      }
+
+      setRatings((prev) => ({
+        ...prev,
+        [spotId]: modalRating,
+      }));
       /*
       * 訪問可能なチャットルーム一覧を取得する
       */
@@ -398,9 +439,10 @@ export default function DashboardPage() {
         );
       }
 
-      alert("感想を投稿しました！");
+      alert("評価と感想を送信しました！");
 
       setComment("");
+      setModalRating(0);
       setShowCommentModal(false);
 
       /*
@@ -499,12 +541,21 @@ export default function DashboardPage() {
   const shouldShowVoteNotification =
     currentLevel >= 2 &&
     passport.user.voteFeatureViewedAt === null;
-
+  
   const shouldShowProposalNotification =
     currentLevel >= 3 &&
     passport.user.proposalFeatureViewedAt === null;
 
-  return (
+  const shouldShowSurveyNotification =
+    currentLevel >= 4 &&
+    passport.user.surveyCompletedAt === null;
+
+  const canSubmitStampFeedback =
+    modalRating > 0 &&
+    comment.trim().length > 0 &&
+    !sendingComment;
+
+    return (
     <div
       style={{
         minHeight: "100vh",
@@ -639,6 +690,69 @@ export default function DashboardPage() {
             >
               提案へ
             </button>
+          </section>
+        )}
+        {shouldShowSurveyNotification && (
+          <section
+            style={{
+              marginBottom: "20px",
+              padding: "20px",
+              borderRadius: "18px",
+              backgroundColor: "#ecfdf5",
+              border: "2px solid #10b981",
+              boxShadow: "0 8px 24px rgba(16, 185, 129, 0.12)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    margin: "0 0 8px",
+                    color: "#065f46",
+                    fontSize: "21px",
+                  }}
+                >
+                  🎉 スタンプラリーご参加ありがとうございました！
+                </h2>
+
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#475569",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  アンケートのご協力をお願いいたします。
+                  感想やご意見を、今後のオープンキャンパス改善に活用します。
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push("/survey")}
+                style={{
+                  padding: "13px 22px",
+                  borderRadius: "999px",
+                  border: "none",
+                  backgroundColor: "#10b981",
+                  color: "#ffffff",
+                  fontWeight: "bold",
+                  fontSize: "15px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                アンケートはこちら
+              </button>
+            </div>
           </section>
         )}
 
@@ -1061,7 +1175,13 @@ export default function DashboardPage() {
       {showCommentModal && (
         <div
           onClick={() => {
+            if (sendingComment) {
+              return;
+            }
+
             setShowCommentModal(false);
+            setComment("");
+            setModalRating(0);
             router.replace("/dashboard");
           }}
           style={{
@@ -1222,7 +1342,88 @@ export default function DashboardPage() {
                 )}
 
             </div>
+            <section
+              style={{
+                marginBottom: "20px",
+                padding: "18px",
+                borderRadius: "16px",
+                border: "1px solid #fde68a",
+                backgroundColor: "#fffbeb",
+                textAlign: "center",
+              }}
+            >
+              <h3
+                style={{
+                  margin: "0 0 8px",
+                  color: "#92400e",
+                  fontSize: "17px",
+                }}
+              >
+                この研究室はいかがでしたか？
+              </h3>
 
+              <p
+                style={{
+                  margin: "0 0 12px",
+                  color: "#78716c",
+                  fontSize: "13px",
+                }}
+              >
+                星を押して5段階で評価してください。
+              </p>
+
+              <div
+                role="radiogroup"
+                aria-label={`${spotName}の研究室評価`}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: "6px",
+                }}
+              >
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    role="radio"
+                    aria-checked={modalRating === star}
+                    aria-label={`${star}点`}
+                    disabled={sendingComment}
+                    onClick={() => setModalRating(star)}
+                    style={{
+                      padding: "2px",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      color:
+                        star <= modalRating
+                          ? "#f59e0b"
+                          : "#d1d5db",
+                      cursor: sendingComment
+                        ? "not-allowed"
+                        : "pointer",
+                      fontSize: "36px",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+
+              <p
+                style={{
+                  minHeight: "20px",
+                  margin: "10px 0 0",
+                  color: "#92400e",
+                  fontSize: "13px",
+                  fontWeight: "bold",
+                }}
+              >
+                {modalRating > 0
+                  ? `${modalRating}点を選択中`
+                  : "評価を選択してください"}
+              </p>
+            </section>
             <textarea
               value={comment}
               onChange={(event) => setComment(event.target.value)}
@@ -1250,6 +1451,7 @@ export default function DashboardPage() {
                 lineHeight: 1.6,
               }}
             >
+              星評価と感想の両方を入力すると送信できます。
               投稿した感想は、この研究室のチャットで他の参加者と共有されます。
             </p>
 
@@ -1263,24 +1465,26 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={handleCommentSubmit}
-                disabled={sendingComment}
+                disabled={!canSubmitStampFeedback}
                 style={{
                   flex: "1 1 180px",
                   padding: "14px",
                   borderRadius: "999px",
                   border: "none",
-                  backgroundColor: sendingComment
-                    ? "#93c5fd"
-                    : "#2563eb",
+                  backgroundColor: canSubmitStampFeedback
+                    ? "#2563eb"
+                    : "#94a3b8",
                   color: "#ffffff",
                   fontWeight: "bold",
                   fontSize: "15px",
-                  cursor: sendingComment
-                    ? "not-allowed"
-                    : "pointer",
+                  cursor: canSubmitStampFeedback
+                    ? "pointer"
+                    : "not-allowed",
                 }}
               >
-                {sendingComment ? "送信中..." : "送信"}
+                {sendingComment
+                  ? "送信中..."
+                  : "評価と感想を送信"}
               </button>
 
               <button
@@ -1288,8 +1492,10 @@ export default function DashboardPage() {
                 onClick={() => {
                   setShowCommentModal(false);
                   setComment("");
+                  setModalRating(0);
                   router.replace("/dashboard");
                 }}
+                disabled={sendingComment}
                 style={{
                   flex: "1 1 180px",
                   padding: "14px",
@@ -1299,10 +1505,12 @@ export default function DashboardPage() {
                   color: "#334155",
                   fontWeight: "bold",
                   fontSize: "15px",
-                  cursor: "pointer",
+                  cursor: sendingComment
+                    ? "not-allowed"
+                    : "pointer",
                 }}
               >
-                あとで書く
+                あとで評価・感想を書く
               </button>
             </div>
           </div>

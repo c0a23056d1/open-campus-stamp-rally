@@ -94,6 +94,14 @@ export async function POST(req: Request) {
                 futureRequest,
             },
         });
+        await prisma.user.update({
+            where: {
+                id: sessionUser.id,
+            },
+            data: {
+                surveyCompletedAt: new Date(),
+            },
+        });
         return NextResponse.json({
             message: "アンケートを保存しました",
             response,
@@ -123,6 +131,15 @@ export async function GET(req: Request) {
       where: {
         userId: sessionUser.id,
       },
+    });
+    
+    await prisma.user.update({
+    where: {
+        id: sessionUser.id,
+    },
+    data: {
+        surveyCompletedAt: new Date(),
+    },
     });
 
     return NextResponse.json({

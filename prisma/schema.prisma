@@ -25,6 +25,9 @@ model User {
   // 提案画面を初めて開いた日時
   proposalFeatureViewedAt DateTime?
 
+  //　アンケートに回答した日時
+  surveyCompletedAt DateTime?
+  
   wallet    Wallet?
   nft       NFT?
   stampLogs StampLog[]
