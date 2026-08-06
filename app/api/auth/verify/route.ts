@@ -13,6 +13,7 @@ type VerifyRequestBody = {
   walletAddress?: unknown;
   publicKey?: unknown;
   name?: unknown;
+  schoolYear?: unknown;
   researchConsent?: unknown;
 };
 
@@ -46,6 +47,19 @@ export async function POST(request: Request) {
       typeof body.name === "string"
         ? body.name.trim()
         : "";
+    const schoolYear =
+      typeof body.schoolYear === "string"
+        ? body.schoolYear.trim()
+        : "";
+      
+    const ALLOWED_SCHOOL_YEARS = [
+      "middle_school",
+      "high_school_1",
+      "high_school_2",
+      "high_school_3",
+      "other",
+    ] as const;
+
     const researchConsent =
       body.researchConsent === true;
   if (
@@ -281,6 +295,14 @@ export async function POST(request: Request) {
         throw new Error("NAME_REQUIRED");
       }
 
+      if (
+        !ALLOWED_SCHOOL_YEARS.includes(
+          schoolYear as (typeof ALLOWED_SCHOOL_YEARS)[number]
+        )
+      ) {
+        throw new Error("SCHOOL_YEAR_REQUIRED");
+      }
+
       if (!researchConsent) {
         throw new Error("CONSENT_REQUIRED");
       }
@@ -291,6 +313,7 @@ export async function POST(request: Request) {
       return transaction.user.create({
         data: {
           name,
+          schoolYear,
           consentAt: new Date(),
           wallet: {
             create: {
@@ -384,6 +407,20 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           message: "新規登録にはニックネームが必要です",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "SCHOOL_YEAR_REQUIRED"
+    ) {
+      return NextResponse.json(
+        {
+          message: "学年を選択してください",
         },
         {
           status: 400,

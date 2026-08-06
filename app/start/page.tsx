@@ -39,6 +39,7 @@ export default function StartPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [checkingSession, setCheckingSession] = useState(true);
+  const [schoolYear, setSchoolYear] = useState("");
 
   const router = useRouter();
   const isStartDisabled =
@@ -91,6 +92,11 @@ export default function StartPage() {
     setStatusMessage("");
    
     const trimmedName = name.trim();
+
+    if (!hasExistingWallet && !schoolYear) {
+      setErrorMessage("学年を選択してください");
+      return;
+    }
 
     if (trimmedName.length < 1 || trimmedName.length > 30) {
       setErrorMessage(
@@ -214,6 +220,7 @@ export default function StartPage() {
           walletAddress: wallet.symbolAddress,
           publicKey: wallet.symbolPublicKey,
           name: trimmedName,
+          schoolYear,
           researchConsent,
         }),
       });
@@ -485,6 +492,16 @@ export default function StartPage() {
                     fontSize: "16px",
                   }}
                 />
+                <p
+                  style={{
+                    margin: "6px 0 0",
+                    fontSize: "12px",
+                    lineHeight: 1.6,
+                    color: "#94a3b8",
+                  }}
+                >
+                  ※本名や個人を特定できる名前は入力せず、ニックネームを入力してください。
+                </p>
               </>
             )}
 
@@ -637,6 +654,18 @@ export default function StartPage() {
                 システム利用ログ等を取得します。
                 氏名、住所、電話番号、メールアドレスなど、
                 個人を直接特定する情報は取得しません。
+                システムではニックネームを登録していただきます。
+                本名、学校名、SNSアカウント名など、個人を特定できる情報は入力しないでください。
+                チャット画面では投稿者名を表示せず、メッセージのみ匿名で表示します。
+              </p>
+
+              <h3 style={{ fontSize: "15px", marginBottom: "6px" }}>
+                研究対象者
+              </h3>
+
+              <p>
+                本研究は、オープンキャンパスに参加する中学生および高校生を研究対象者とします。
+                保護者、大学生、教職員、その他の関係者は研究対象に含みません。
               </p>
 
               <h3 style={{ fontSize: "15px", marginBottom: "6px" }}>
@@ -780,6 +809,53 @@ export default function StartPage() {
             >
               {statusMessage}
             </p>
+          )}
+
+          {!hasExistingWallet && (
+            <>
+                <label
+                style={{
+                  display: "block",
+                  marginTop: "18px",
+                  marginBottom: "8px",
+                  fontWeight: "bold",
+                  color: "#334155",
+                }}
+              >
+                学年
+              </label>
+              <select 
+                value={schoolYear} 
+                onChange={(event) => setSchoolYear(event.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#ffffff",
+                  boxSizing: "border-box",
+                }}
+              >
+                <option value="">選択してください</option>
+                <option value="middle_school">中学生</option>
+                <option value="high_school_1">高校1年生</option>
+                <option value="high_school_2">高校2年生</option>
+                <option value="high_school_3">高校3年生</option>
+                <option value="other">その他（中学生・高校生以外）</option>
+              </select>
+
+              <p
+                style={{
+                  margin: "6px 0 0",
+                  fontSize: "12px",
+                  lineHeight: 1.6,
+                  color: "#94a3b8",
+                }}
+              >
+                ※本研究は中学生・高校生を対象としています。
+                大学生・教職員・動作確認者の方は「その他」を選択してください。
+              </p>
+            </>
           )}
 
           <button

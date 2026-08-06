@@ -221,16 +221,6 @@ export default function ChatRoomPage() {
                     border: "1px solid #e5e7eb",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      fontWeight: "bold",
-                      marginBottom: "4px",
-                      color: "#334155",
-                    }}
-                  >
-                    {isMine ? "自分" : msg.user.name ?? "名無しユーザー"}
-                  </div>
 
                   {msg.replyToMessage && (
                     <div
@@ -319,10 +309,7 @@ export default function ChatRoomPage() {
             color: "#1e40af",
           }}
         >
-          <strong>
-            {replyToMessage.user.name ?? "名無しユーザー"}に返信中
-          </strong>
-          <p style={{ margin: "6px 0" }}>{replyToMessage.messageText}</p>
+          <p style={{ margin: "6px 0" }}>{replyToMessage.messageText}に返信中</p>
           <button onClick={() => setReplyToMessage(null)}>
             返信をキャンセル
           </button>
