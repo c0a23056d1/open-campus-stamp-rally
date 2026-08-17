@@ -1,23 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth/session";
 
 const QUESTION_COUNT = 16;
-
-/**
- * 管理者権限を確認する
- */
-async function checkAdmin(userId: number) {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      isAdmin: true,
-    },
-  });
-
-  return user?.isAdmin === true;
-}
 
 /**
  * dNFT側とアンケート側のタグ表記を、
@@ -142,37 +127,7 @@ function getDnftInterestTags(
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const adminUserId = Number(
-      searchParams.get("adminUserId")
-    );
-
-    if (
-      !Number.isInteger(adminUserId) ||
-      adminUserId <= 0
-    ) {
-      return NextResponse.json(
-        {
-          message: "有効なadminUserIdが必要です",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const isAdmin = await checkAdmin(adminUserId);
-
-    if (!isAdmin) {
-      return NextResponse.json(
-        {
-          message: "管理者権限がありません",
-        },
-        {
-          status: 403,
-        }
-      );
-    }
+    await requireAdmin();
 
     /**
      * アンケート回答と、
@@ -366,19 +321,23 @@ export async function GET(req: Request) {
       matchCountDistribution,
     });
   } catch (error) {
-    console.error(
-      "アンケート分析APIでエラーが発生しました:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        message:
-          "アンケート分析データ取得に失敗しました",
-      },
-      {
-        status: 500,
-      }
-    );
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+    if (
+      error instanceof Error &&
+      error.message === "FORBIDDEN"
+    ) {
+      return NextResponse.json(
+        { message: "管理者権限がありません" },
+        { status: 403 }
+      );
+    }
   }
 }

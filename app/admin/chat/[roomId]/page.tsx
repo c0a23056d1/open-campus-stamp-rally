@@ -32,15 +32,12 @@ export default function AdminChatMessagesPage() {
 
   const fetchMessages = async () => {
     try {
-      const adminUserId = localStorage.getItem("userId");
-
-      if (!adminUserId) {
-        router.push("/login");
-        return;
-      }
 
       const res = await fetch(
-        `/api/admin/chat/messages?adminUserId=${adminUserId}&roomId=${roomId}`
+        `/api/admin/chat/messages?roomId=${roomId}`,
+        {
+          credentials: "include",
+        }
       );
 
       const data = await res.json();
@@ -66,18 +63,17 @@ export default function AdminChatMessagesPage() {
   }, []);
 
   const handleDeleteMessage = async (messageId: number) => {
-    const adminUserId = localStorage.getItem("userId");
 
     const ok = confirm("このメッセージを削除しますか？");
     if (!ok) return;
 
     const res = await fetch("/api/admin/chat/messages", {
       method: "PATCH",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        adminUserId,
         messageId,
       }),
     });
@@ -130,7 +126,7 @@ export default function AdminChatMessagesPage() {
           >
             <p>
               <strong>投稿者：</strong>
-              {message.user.name || "名無し"} / {message.user.email}
+              {message.user.name || "名無し"} / {message.user.email ?? "未登録"}
             </p>
 
             <p>

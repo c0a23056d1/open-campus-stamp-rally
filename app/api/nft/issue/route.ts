@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { issueInitialNftToUser } from "@/lib/nftIssue";
+import { issueInitialNftToUser } from "@/lib/symbol/nftIssue";
 
 export async function POST(req: Request) {
   try {

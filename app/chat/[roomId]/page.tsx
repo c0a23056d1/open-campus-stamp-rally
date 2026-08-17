@@ -48,10 +48,7 @@ export default function ChatRoomPage() {
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const currentUserId =
-    typeof window !== "undefined"
-      ? Number(localStorage.getItem("userId"))
-      : null;
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,16 +56,13 @@ export default function ChatRoomPage() {
 
   const fetchMessages = async () => {
     try {
-      const userId = localStorage.getItem("userId");
-
-      if (!userId) {
-        router.push("/login");
-        return;
-      }
 
       const res = await fetch(
-        `/api/chat/messages?userId=${userId}&roomId=${roomId}`
-      );
+        `/api/chat/messages?roomId=${roomId}`,
+        {
+          credentials: "include",
+        }
+      )
       const data = await res.json();
 
       if (!res.ok) {
@@ -79,6 +73,7 @@ export default function ChatRoomPage() {
 
       setRoom(data.room);
       setMessages(data.messages);
+      setCurrentUserId(data.currentUserId);
     } catch (error) {
       console.error("メッセージ取得エラー:", error);
       alert("メッセージ取得中にエラーが発生しました");
@@ -96,12 +91,6 @@ export default function ChatRoomPage() {
   }, [messages]);
 
   const handleSend = async () => {
-    const userId = localStorage.getItem("userId");
-
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
 
     if (!messageText.trim()) {
       alert("メッセージを入力してください");
@@ -112,11 +101,11 @@ export default function ChatRoomPage() {
 
     const res = await fetch("/api/chat/messages", {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        userId,
         roomId,
         messageText,
         replyToMessageId: replyToMessage?.id ?? null,
@@ -145,20 +134,14 @@ export default function ChatRoomPage() {
   };
 
   const handleReaction = async (messageId: number, emoji: string) => {
-    const userId = localStorage.getItem("userId");
-
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
 
     const res = await fetch("/api/chat/reactions", {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        userId,
         messageId,
         emoji,
       }),
@@ -238,16 +221,6 @@ export default function ChatRoomPage() {
                     border: "1px solid #e5e7eb",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      fontWeight: "bold",
-                      marginBottom: "4px",
-                      color: "#334155",
-                    }}
-                  >
-                    {isMine ? "自分" : msg.user.name ?? "名無しユーザー"}
-                  </div>
 
                   {msg.replyToMessage && (
                     <div
@@ -336,10 +309,7 @@ export default function ChatRoomPage() {
             color: "#1e40af",
           }}
         >
-          <strong>
-            {replyToMessage.user.name ?? "名無しユーザー"}に返信中
-          </strong>
-          <p style={{ margin: "6px 0" }}>{replyToMessage.messageText}</p>
+          <p style={{ margin: "6px 0" }}>{replyToMessage.messageText}に返信中</p>
           <button onClick={() => setReplyToMessage(null)}>
             返信をキャンセル
           </button>

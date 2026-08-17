@@ -1,39 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth/session";
 
-async function checkAdmin(userId: number) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
+export const runtime = "nodejs";
 
-  return !!user?.isAdmin;
-}
-
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const adminUserId = Number(searchParams.get("adminUserId"));
-
-    if (!adminUserId) {
-      return NextResponse.json(
-        { message: "adminUserIdが必要です" },
-        { status: 400 }
-      );
-    }
-
-    if (!(await checkAdmin(adminUserId))) {
-      return NextResponse.json(
-        { message: "管理者権限がありません" },
-        { status: 403 }
-      );
-    }
+    await requireAdmin();
 
     const users = await prisma.user.findMany({
       include: {
         nft: true,
         stampLogs: {
-          include: { spot: true },
-          orderBy: { visitedAt: "asc" },
+          include: {
+            spot: true,
+          },
+          orderBy: {
+            visitedAt: "asc",
+          },
         },
         messages: true,
         votes: true,
@@ -53,8 +37,10 @@ export async function GET(req: Request) {
     const activeAfterDays = (days: number) => {
       const targetDate = daysAgo(days);
 
-      return users.filter((user) => 
-          user.loginHistories.some((history) => history.loginAt >= targetDate)
+      return users.filter((user) =>
+        user.loginHistories.some(
+          (history) => history.loginAt >= targetDate
+        )
       ).length;
     };
 
@@ -75,7 +61,9 @@ export async function GET(req: Request) {
     const chatRooms = await prisma.chatRoom.findMany({
       include: {
         messages: {
-          where: { isDeleted: false },
+          where: {
+            isDeleted: false,
+          },
           include: {
             user: true,
           },
@@ -93,7 +81,9 @@ export async function GET(req: Request) {
     const votes = await prisma.vote.findMany({
       include: {
         user: {
-          include: { nft: true },
+          include: {
+            nft: true,
+          },
         },
         proposal: true,
         option: true,
@@ -115,18 +105,27 @@ export async function GET(req: Request) {
 
     users.forEach((user) => {
       const firstLog = user.stampLogs[0];
-      if (!firstLog) return;
 
-      const key = `${firstLog.spot.floor}：${firstLog.spot.spotName}`;
-      firstVisitSpotMap.set(key, (firstVisitSpotMap.get(key) ?? 0) + 1);
+      if (!firstLog) {
+        return;
+      }
+
+      const key =
+        `${firstLog.spot.floor}：${firstLog.spot.spotName}`;
+
+      firstVisitSpotMap.set(
+        key,
+        (firstVisitSpotMap.get(key) ?? 0) + 1
+      );
     });
 
-    const firstVisitSpots = Array.from(firstVisitSpotMap.entries()).map(
-      ([spotName, count]) => ({
-        spotName,
-        count,
-      })
-    );
+    const firstVisitSpots =
+      Array.from(firstVisitSpotMap.entries()).map(
+        ([spotName, count]) => ({
+          spotName,
+          count,
+        })
+      );
 
     const spotVisitRanking = spots
       .map((spot) => ({
@@ -137,10 +136,15 @@ export async function GET(req: Request) {
       }))
       .sort((a, b) => b.visitCount - a.visitCount);
 
-    const allMessages = chatRooms.flatMap((room) => room.messages);
+    const allMessages = chatRooms.flatMap(
+      (room) => room.messages
+    );
+
     const totalMessages = allMessages.length;
 
-    const chatUserIds = new Set(allMessages.map((message) => message.userId));
+    const chatUserIds = new Set(
+      allMessages.map((message) => message.userId)
+    );
 
     const roomMessageCounts = chatRooms.map((room) => ({
       roomId: room.id,
@@ -150,11 +154,17 @@ export async function GET(req: Request) {
 
     const userMessageMap = new Map<
       number,
-      { userId: number; name: string | null; email: string; messageCount: number }
+      {
+        userId: number;
+        name: string | null;
+        email: string;
+        messageCount: number;
+      }
     >();
 
     allMessages.forEach((message) => {
-      const current = userMessageMap.get(message.userId);
+      const current =
+        userMessageMap.get(message.userId);
 
       if (current) {
         current.messageCount += 1;
@@ -162,53 +172,76 @@ export async function GET(req: Request) {
         userMessageMap.set(message.userId, {
           userId: message.userId,
           name: message.user.name,
-          email: message.user.email,
+          email:
+            message.user.email ?? "未登録",
           messageCount: 1,
         });
       }
     });
 
-    const userMessageRanking = Array.from(userMessageMap.values()).sort(
-      (a, b) => b.messageCount - a.messageCount
-    );
+    const userMessageRanking =
+      Array.from(userMessageMap.values()).sort(
+        (a, b) => b.messageCount - a.messageCount
+      );
 
     const totalProposals = proposals.length;
+
     const pendingProposals = proposals.filter(
       (proposal) => proposal.status === "pending"
     ).length;
+
     const approvedProposals = proposals.filter(
       (proposal) => proposal.status === "approved"
     ).length;
 
     const totalVotes = votes.length;
-    const votedUserIds = new Set(votes.map((vote) => vote.userId));
+
+    const votedUserIds = new Set(
+      votes.map((vote) => vote.userId)
+    );
 
     const proposalCreatorUserIds = new Set(
       proposals
         .map((proposal) => proposal.creatorUserId)
-        .filter((id): id is number => id !== null)
+        .filter(
+          (id): id is number => id !== null
+        )
     );
 
-    const levelDistribution = [0, 1, 2, 3, 4].map((level) => ({
+    const levels = [0, 1, 2, 3, 4];
+
+    const levelDistribution = levels.map((level) => ({
       level,
-      userCount: users.filter((user) => user.nft?.level === level).length,
+      userCount: users.filter(
+        (user) => user.nft?.level === level
+      ).length,
     }));
 
-    const levelActivity = [0, 1, 2, 3, 4].map((level) => {
-      const levelUsers = users.filter((user) => user.nft?.level === level);
-      const levelUserIds = new Set(levelUsers.map((user) => user.id));
+    const levelActivity = levels.map((level) => {
+      const levelUsers = users.filter(
+        (user) => user.nft?.level === level
+      );
+
+      const levelUserIds = new Set(
+        levelUsers.map((user) => user.id)
+      );
 
       return {
         level,
         userCount: levelUsers.length,
-        messageCount: allMessages.filter((message) =>
-          levelUserIds.has(message.userId)
+        messageCount: allMessages.filter(
+          (message) =>
+            levelUserIds.has(message.userId)
         ).length,
-        voteCount: votes.filter((vote) => levelUserIds.has(vote.userId)).length,
+        voteCount: votes.filter(
+          (vote) => levelUserIds.has(vote.userId)
+        ).length,
         proposalCount: proposals.filter(
           (proposal) =>
             proposal.creatorUserId !== null &&
-            levelUserIds.has(proposal.creatorUserId)
+            levelUserIds.has(
+              proposal.creatorUserId
+            )
         ).length,
       };
     });
@@ -221,7 +254,11 @@ export async function GET(req: Request) {
         multipleVisitRate:
           totalUsers === 0
             ? 0
-            : Math.round((usersVisitedMultipleSpots / totalUsers) * 100),
+            : Math.round(
+                (usersVisitedMultipleSpots /
+                  totalUsers) *
+                  100
+              ),
       },
       circulation: {
         spotVisitRanking,
@@ -239,7 +276,8 @@ export async function GET(req: Request) {
         approvedProposals,
         totalVotes,
         votedUserCount: votedUserIds.size,
-        proposalCreatorUserCount: proposalCreatorUserIds.size,
+        proposalCreatorUserCount:
+          proposalCreatorUserIds.size,
       },
       level: {
         levelDistribution,
@@ -251,17 +289,56 @@ export async function GET(req: Request) {
         active14Days,
         active30Days,
         active7DaysRate:
-          totalUsers === 0 ? 0 : Math.round((active7Days / totalUsers) * 100),
+          totalUsers === 0
+            ? 0
+            : Math.round(
+                (active7Days / totalUsers) * 100
+              ),
         active14DaysRate:
-          totalUsers === 0 ? 0 : Math.round((active14Days / totalUsers) * 100),
+          totalUsers === 0
+            ? 0
+            : Math.round(
+                (active14Days / totalUsers) * 100
+              ),
         active30DaysRate:
-          totalUsers === 0 ? 0 : Math.round((active30Days / totalUsers) * 100),
+          totalUsers === 0
+            ? 0
+            : Math.round(
+                (active30Days / totalUsers) * 100
+              ),
       },
     });
   } catch (error) {
-    console.error(error);
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "FORBIDDEN"
+    ) {
+      return NextResponse.json(
+        { message: "管理者権限がありません" },
+        { status: 403 }
+      );
+    }
+
+    console.error(
+      "高度分析データ取得エラー:",
+      error
+    );
+
     return NextResponse.json(
-      { message: "分析データ取得に失敗しました" },
+      {
+        message:
+          "分析データ取得に失敗しました",
+      },
       { status: 500 }
     );
   }

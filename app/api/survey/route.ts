@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/session";
 
 export async function POST(req: Request) {
+    const sessionUser = await requireUser();
     try {
         const body = await req.json();
 
         const {
-            userId,
             answers,
             goodPoint,
             improvePoint,
@@ -25,9 +26,9 @@ export async function POST(req: Request) {
             );
         }
 
-        if (!userId || !answers) {
+        if (!answers) {
             return NextResponse.json(
-                { message: "userIdと回答が必要です" },
+                { message: "回答が必要です" },
                 { status: 400 }
             );
         }
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
 
         const response = await prisma.surveyResponse.upsert({
             where: {
-                userId: Number(userId),
+                userId: sessionUser.id,
             },
             update: {
                 q1: answers.q1,
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
                 futureRequest,
             },
             create: {
-                userId: Number(userId),
+                userId: sessionUser.id,
                 q1: answers.q1,
                 q2: answers.q2,
                 q3: answers.q3,
@@ -93,6 +94,14 @@ export async function POST(req: Request) {
                 futureRequest,
             },
         });
+        await prisma.user.update({
+            where: {
+                id: sessionUser.id,
+            },
+            data: {
+                surveyCompletedAt: new Date(),
+            },
+        });
         return NextResponse.json({
             message: "アンケートを保存しました",
             response,
@@ -107,11 +116,11 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const sessionUser = await requireUser();
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = Number(searchParams.get("userId"));
+    const sessionUser = await requireUser();
 
-    if (!userId) {
+    if (!sessionUser.id) {
       return NextResponse.json(
         { message: "userIdが必要です" },
         { status: 400 }
@@ -120,8 +129,17 @@ export async function GET(req: Request) {
 
     const response = await prisma.surveyResponse.findUnique({
       where: {
-        userId,
+        userId: sessionUser.id,
       },
+    });
+    
+    await prisma.user.update({
+    where: {
+        id: sessionUser.id,
+    },
+    data: {
+        surveyCompletedAt: new Date(),
+    },
     });
 
     return NextResponse.json({

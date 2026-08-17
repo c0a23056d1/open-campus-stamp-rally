@@ -1,20 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/session";
 
-export async function GET(req: Request) {
+export const runtime = "nodejs";
+
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = Number(searchParams.get("userId"));
-
-    if (!userId) {
-      return NextResponse.json(
-        { message: "userIdが必要です" },
-        { status: 400 }
-      );
-    }
+    /*
+     * URLのuserIdではなく、
+     * oc_session Cookieから現在のユーザーを取得する。
+     */
+    const currentUser = await requireUser();
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: {
+        id: currentUser.id,
+      },
       include: {
         wallet: true,
         nft: true,
@@ -22,29 +23,50 @@ export async function GET(req: Request) {
           include: {
             spot: true,
           },
+          orderBy: {
+            visitedAt: "desc",
+          },
         },
         spotRatings: true,
       },
     });
 
-    const spots = await prisma.spot.findMany({
-      orderBy: [{ floor: "desc" }, { spotName: "asc" }],
-    });
-
     if (!user) {
       return NextResponse.json(
-        { message: "ユーザーが見つかりません" },
-        { status: 404 }
+        {
+          message: "ユーザーが見つかりません",
+        },
+        {
+          status: 404,
+        }
       );
     }
+
+    const spots = await prisma.spot.findMany({
+      orderBy: [
+        {
+          floor: "desc",
+        },
+        {
+          spotName: "asc",
+        },
+      ],
+    });
 
     return NextResponse.json({
       user: {
         id: user.id,
-        name: user.name,
-        email: user.email,
+        name: user.name || "名無し",
+        email: user.email ?? "メール未登録",
+        voteFeatureViewedAt: user.voteFeatureViewedAt,
+        proposalFeatureViewedAt: user.proposalFeatureViewedAt,
+        surveyCompletedAt: user.surveyCompletedAt,
       },
-      wallet: user.wallet,
+      wallet: user.wallet
+        ? {
+            symbolAddress: user.wallet.symbolAddress,
+          }
+        : null,
       nft: user.nft,
       stamps: user.stampLogs.map((log) => ({
         id: log.id,
@@ -65,10 +87,32 @@ export async function GET(req: Request) {
       })),
     });
   } catch (error) {
-    console.error(error);
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        {
+          message: "ログインが必要です",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    console.error(
+      "Passport情報の取得に失敗しました:",
+      error
+    );
+
     return NextResponse.json(
-      { message: "Passport情報の取得に失敗しました" },
-      { status: 500 }
+      {
+        message: "Passport情報の取得に失敗しました",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

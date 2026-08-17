@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { sendInitialMosaic } from "@/lib/symbolTransfer";
+import { sendInitialMosaic } from "@/lib/symbol/symbolTransfer";
 
 export async function issueInitialNftToUser(userId: number) {
     const user = await prisma.user.findUnique({

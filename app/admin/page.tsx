@@ -16,15 +16,11 @@ export default function AdminPage() {
   } | null>(null);
 
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
 
     const checkAdmin = async () => {
-      const res = await fetch(`/api/admin/check?userId=${userId}`);
+      const res = await fetch("/api/admin/check", {
+        credentials: "include",
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -36,7 +32,10 @@ export default function AdminPage() {
       setAdminName(data.user.name);
 
       const analyticsRes = await fetch(
-        `/api/admin/analytics?adminUserId=${userId}`
+        "/api/admin/analytics",
+        {
+          credentials: "include",
+        }
       );
       const analyticsData = await analyticsRes.json();
 

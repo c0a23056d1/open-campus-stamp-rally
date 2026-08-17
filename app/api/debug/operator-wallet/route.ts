@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSymbolWallet } from "@/lib/symbolWallet";
+import { createSymbolWallet } from "@/lib/symbol/symbolWallet";
 
 export async function GET() {
   try {

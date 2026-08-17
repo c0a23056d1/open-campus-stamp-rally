@@ -1,36 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendDaoEvent } from "@/lib/symbolDao";
+import { sendDaoEvent } from "@/lib/symbol/symbolDao";
+import { requireAdmin } from "@/lib/auth/session";
 
-async function checkAdmin(userId: number) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  return !!user?.isAdmin;
-}
+export const runtime = "nodejs";
 
 export async function PATCH(req: Request) {
   try {
-    const { adminUserId, proposalId } = await req.json();
+    const admin = await requireAdmin();
 
-    if (!adminUserId || !proposalId) {
+    const { proposalId } = await req.json();
+
+    const proposalIdNumber = Number(proposalId);
+
+    if (
+      !Number.isInteger(proposalIdNumber) ||
+      proposalIdNumber <= 0
+    ) {
       return NextResponse.json(
-        { message: "adminUserIdとproposalIdが必要です" },
+        { message: "有効なproposalIdが必要です" },
         { status: 400 }
-      );
-    }
-
-    if (!(await checkAdmin(Number(adminUserId)))) {
-      return NextResponse.json(
-        { message: "管理者権限がありません" },
-        { status: 403 }
       );
     }
 
     const proposal = await prisma.proposal.findUnique({
       where: {
-        id: Number(proposalId),
+        id: proposalIdNumber,
       },
       include: {
         chatRoom: true,
@@ -57,7 +52,9 @@ export async function PATCH(req: Request) {
       const chatRoom = await prisma.chatRoom.create({
         data: {
           roomName: `${proposal.title} 議論ルーム`,
-          description: `Proposal「${proposal.title}」について話し合うためのチャットルームです。`,
+          description:
+            `Proposal「${proposal.title}」について話し合うためのチャットルームです。`,
+          roomType: "proposal",
         },
       });
 
@@ -72,12 +69,15 @@ export async function PATCH(req: Request) {
         proposalId: proposal.id,
         title: proposal.title,
         status: "approved",
-        actorUserId: Number(adminUserId),
+        actorUserId: admin.id,
       });
 
       approveTxHash = result.txHash;
     } catch (symbolError) {
-      console.error("DAOイベントのSymbol記録に失敗:", symbolError);
+      console.error(
+        "DAOイベントのSymbol記録に失敗:",
+        symbolError
+      );
     }
 
     const updatedProposal = await prisma.proposal.update({
@@ -104,7 +104,28 @@ export async function PATCH(req: Request) {
       approveTxHash,
     });
   } catch (error) {
-    console.error(error);
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        { message: "ログインが必要です" },
+        { status: 401 }
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "FORBIDDEN"
+    ) {
+      return NextResponse.json(
+        { message: "管理者権限がありません" },
+        { status: 403 }
+      );
+    }
+
+    console.error("Proposal承認エラー:", error);
+
     return NextResponse.json(
       { message: "Proposal承認に失敗しました" },
       { status: 500 }

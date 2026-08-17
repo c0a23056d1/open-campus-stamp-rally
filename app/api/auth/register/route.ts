@@ -1,50 +1,54 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcrypt";
 import { prisma } from "@/lib/prisma";
-import { createSymbolWallet } from "@/lib/symbolWallet";
-import { encryptText } from "@/lib/crypto";
-import { issueInitialNftToUser } from "@/lib/nftIssue";
+import { requireUser } from "@/lib/auth/session";
+import { issueInitialNftToUser } from "@/lib/symbol/nftIssue";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    /*
+     * HttpOnly Cookie
+     *   ↓
+     * Sessionテーブル
+     *   ↓
+     * Userテーブル
+     *
+     * フロントエンドからuserIdを受け取らず、
+     * セッションから認証済みユーザーを特定する。
+     */
+    const currentUser = await requireUser();
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const { researchConsent } = await req.json();
 
-    if (existingUser) {
+    // サーバー側でも研究参加への同意を確認する
+    if (researchConsent !== true) {
       return NextResponse.json(
-        { message: "このメールアドレスは既に登録されています" },
-        { status: 400 }
+        {
+          message: "研究参加への同意が必要です",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
-    const wallet = createSymbolWallet();
-    const encryptedPrivateKey = encryptText(wallet.encryptedPrivateKey);
-    const now = new Date();
+    /*
+     * すでに同意済みの場合は、最初の同意日時を上書きしない。
+     */
+    if (currentUser.consentAt) {
+      return NextResponse.json({
+        message: "研究参加への同意は既に登録されています",
+        userId: currentUser.id,
+        consentAt: currentUser.consentAt,
+        alreadyConsented: true,
+      });
+    }
 
-    const user = await prisma.user.create({
+    const user = await prisma.user.update({
+      where: {
+        id: currentUser.id,
+      },
       data: {
-        name,
-        email,
-        passwordHash,
-        wallet: {
-            create: {
-                symbolAddress: wallet.symbolAddress,
-                symbolPublicKey: wallet.symbolPublicKey,
-                encryptedPrivateKey: encryptedPrivateKey,
-            },
-        },
-        nft: {
-            create: {
-                nftId: `OC_PASS_${Date.now()}`,
-                level: 0,
-                title: "Beginner",
-                stampCount: 0,
-            },
-        },
+        consentAt: new Date(),
       },
       include: {
         wallet: true,
@@ -52,33 +56,59 @@ export async function POST(req: Request) {
       },
     });
 
+    /*
+     * 初期NFTのオンチェーン発行を実行する。
+     * issueInitialNftToUser側で二重発行を防止している前提。
+     *
+     * NFT発行を別の認証APIですでに行っている場合は、
+     * このtry〜catch部分を削除して構わない。
+     */
     let issueResult = null;
 
     try {
       issueResult = await issueInitialNftToUser(user.id);
     } catch (issueError) {
-      console.error("初期NFTオンチェーン付与に失敗:", issueError);
+      console.error(
+        "初期NFTのオンチェーン発行に失敗しました:",
+        issueError
+      );
     }
 
     return NextResponse.json({
-      message: "ユーザー登録成功",
+      message: "研究参加への同意を登録しました",
       userId: user.id,
-      name: user.name,
-      email: user.email,
+      consentAt: user.consentAt,
+      alreadyConsented: false,
       wallet: user.wallet,
       nft: user.nft,
       nftIssue: issueResult
         ? {
-          txHash: issueResult.txHash,
-          alreadyIssued: issueResult.alreadyIssued,
-        }
+            txHash: issueResult.txHash,
+            alreadyIssued: issueResult.alreadyIssued,
+          }
         : null,
     });
   } catch (error) {
-    console.error(error);
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        {
+          message: "認証が必要です",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    console.error("研究参加同意の登録に失敗しました:", error);
+
     return NextResponse.json(
-      { message: "ユーザー登録失敗" },
-      { status: 500 }
+      {
+        message: "研究参加同意の登録に失敗しました",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

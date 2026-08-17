@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { buildDnftMetadata } from "@/lib/dnftMetadata";
 
 type PassportData = {
@@ -9,6 +9,9 @@ type PassportData = {
     id: number;
     name: string;
     email: string;
+    voteFeatureViewedAt: string | null;
+    proposalFeatureViewedAt: string | null;
+    surveyCompletedAt: string | null;
   };
   wallet: {
     symbolAddress: string;
@@ -43,65 +46,244 @@ type PassportData = {
 export default function DashboardPage() {
   const [passport, setPassport] = useState<PassportData | null>(null);
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const isNewStamp = searchParams.get("newStamp") === "1";
+  const spotId = Number(searchParams.get("spotId"));
+
+  const didLevelUp =
+    searchParams.get("levelUp") === "1";
+
+  const previousLevel = Number(
+    searchParams.get("previousLevel")
+  );
+
+  const newLevel = Number(
+    searchParams.get("newLevel")
+  );
+
+  const unlockedFeature =
+    searchParams.get("unlockedFeature");
+
+  const spotName = searchParams.get("spotName") ?? "";
+  
   const [ratings, setRatings] = useState<Record<number, number>>({});
   const [showGuide, setShowGuide] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [comment, setComment] = useState("");
+  const [modalRating, setModalRating] = useState(0);
+
+  const [sendingComment, setSendingComment] = useState(false);
+
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
-
     const fetchPassport = async () => {
-      const res = await fetch(`/api/passport?userId=${userId}`);
+      try {
+        const res = await fetch("/api/passport", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        const data = (await res.json()) as
+          | PassportData
+          | { message?: string };
+
+        if (!res.ok) {
+          const message =
+            "message" in data
+              ? data.message
+              : "Passport情報を取得できませんでした";
+
+          console.error(message);
+
+          router.replace("/start");
+          return;
+        }
+
+        setPassport(data as PassportData);
+      } catch (error) {
+        console.error(
+          "Passport情報の取得に失敗しました:",
+          error
+        );
+
+        router.replace("/start");
+      }
+    };
+
+    void fetchPassport();
+  }, [router]);
+
+  useEffect(() => {
+    if (isNewStamp) {
+      setShowCommentModal(true);
+    }
+  }, [isNewStamp]);
+
+  const handleOpenFeature = async (
+    feature: "vote" | "proposal"
+  ) => {
+    try {
+      const res = await fetch(
+        "/api/features/viewed",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            feature,
+          }),
+        }
+      );
+
       const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.message);
-        router.push("/login");
+      if (res.status === 401) {
+        alert(
+          data.message ??
+            "認証の有効期限が切れました。"
+        );
+
+        router.replace("/start");
         return;
       }
 
-      setPassport(data);
-    };
+      if (!res.ok) {
+        throw new Error(
+          data.message ??
+            "閲覧状態の更新に失敗しました"
+        );
+      }
 
-    fetchPassport();
-  }, [router]);
+      setPassport((prev) => {
+        if (!prev) {
+          return prev;
+        }
 
-  const handleLogout = () => {
-    localStorage.clear();
-    router.push("/login");
+        return {
+          ...prev,
+          user: {
+            ...prev.user,
+
+            voteFeatureViewedAt:
+              feature === "vote"
+                ? new Date().toISOString()
+                : prev.user.voteFeatureViewedAt,
+
+            proposalFeatureViewedAt:
+              feature === "proposal"
+                ? new Date().toISOString()
+                : prev.user.proposalFeatureViewedAt,
+          },
+        };
+      });
+
+      if (feature === "vote") {
+        router.push("/proposals");
+        return;
+      }
+
+      router.push("/proposals");
+    } catch (error) {
+      console.error(
+        "機能画面への移動エラー:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "画面の移動に失敗しました"
+      );
+    }
   };
-  const handleRating = async (spotId: number, rating: number) => {
-    const userId = localStorage.getItem("userId");
 
-    const res = await fetch("/api/spot-ratings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        spotId,
-        rating,
-      }),
-    });
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
 
-  const data = await res.json();
+      const data = (await res.json()) as {
+        message?: string;
+      };
 
-  if (!res.ok) {
-    alert(data.message);
-    return;
-  }
+      if (!res.ok) {
+        throw new Error(
+          data.message || "ログアウトに失敗しました"
+        );
+      }
 
-  setRatings((prev) => ({
-    ...prev,
-    [spotId]: rating,
-  }));
+      router.replace("/start");
+      router.refresh();
+    } catch (error) {
+      console.error(
+        "ログアウトに失敗しました:",
+        error
+      );
 
-  alert("評価を保存しました！");
-};
+      alert(
+        error instanceof Error
+          ? error.message
+          : "ログアウトに失敗しました"
+      );
+    }
+  };
+  const handleRating = async (
+    spotId: number,
+    rating: number
+  ) => {
+    try {
+      const res = await fetch("/api/spot-ratings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        // Session Cookieを送信
+        credentials: "include",
+
+        body: JSON.stringify({
+          spotId,
+          rating,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 401) {
+        alert(
+          data.message ??
+            "認証の有効期限が切れました。"
+        );
+
+        router.replace("/start");
+        return;
+      }
+
+      if (!res.ok) {
+        alert(data.message);
+        return;
+      }
+
+      setRatings((prev) => ({
+        ...prev,
+        [spotId]: rating,
+      }));
+
+      alert("評価を保存しました！");
+    } catch (error) {
+      console.error(
+        "研究室評価の保存に失敗しました:",
+        error
+      );
+
+      alert("研究室評価の保存に失敗しました。");
+    }
+  };
   if (!passport) {
     return (
       <div style={{ padding: "24px", backgroundColor: "#f8fafc" }}>
@@ -109,6 +291,176 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  const handleCommentSubmit = async () => {
+    const trimmedComment = comment.trim();
+
+    if (modalRating < 1 || modalRating > 5) {
+      alert("研究室を星1〜5で評価してください");
+      return;
+    }
+
+    if (!trimmedComment) {
+      alert("感想を入力してください");
+      return;
+    }
+
+    if (!spotId || !Number.isInteger(spotId)) {
+      alert("研究室情報を取得できませんでした");
+      return;
+    }
+
+    if (trimmedComment.length > 300) {
+      alert("感想は300文字以内で入力してください");
+      return;
+    }
+
+    try {
+      setSendingComment(true);
+      const ratingRes = await fetch("/api/spot-ratings", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          spotId,
+          rating: modalRating,
+        }),
+      });
+
+      const ratingData = await ratingRes.json();
+
+      if (ratingRes.status === 401) {
+        alert(
+          ratingData.message ??
+            "認証の有効期限が切れました。もう一度認証してください。"
+        );
+
+        router.replace("/start");
+        return;
+      }
+
+      if (!ratingRes.ok) {
+        throw new Error(
+          ratingData.message ??
+            "研究室評価の保存に失敗しました"
+        );
+      }
+
+      setRatings((prev) => ({
+        ...prev,
+        [spotId]: modalRating,
+      }));
+      /*
+      * 訪問可能なチャットルーム一覧を取得する
+      */
+      const roomsRes = await fetch("/api/chat/rooms", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      const roomsData = await roomsRes.json();
+
+      if (roomsRes.status === 401) {
+        alert(
+          roomsData.message ??
+            "認証の有効期限が切れました。もう一度認証してください。"
+        );
+
+        router.replace("/start");
+        return;
+      }
+
+      if (!roomsRes.ok) {
+        throw new Error(
+          roomsData.message ??
+            "チャットルームの取得に失敗しました"
+        );
+      }
+
+      /*
+      * 今回スタンプを取得した研究室に対応する
+      * spot型チャットルームを検索する
+      */
+      const targetRoom = roomsData.rooms.find(
+        (room: {
+          id: number;
+          roomType: string;
+          spotId: number | null;
+          spot?: {
+            id: number;
+          } | null;
+        }) =>
+          room.roomType === "spot" &&
+          (room.spotId === spotId ||
+            room.spot?.id === spotId)
+      );
+
+      if (!targetRoom) {
+        throw new Error(
+          "この研究室に対応するチャットルームが見つかりません"
+        );
+      }
+
+      /*
+      * 既存のチャット投稿APIへ感想を送信する
+      */
+      const messageRes = await fetch("/api/chat/messages", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roomId: targetRoom.id,
+          messageText: trimmedComment,
+          replyToMessageId: null,
+        }),
+      });
+
+      const messageData = await messageRes.json();
+
+      if (messageRes.status === 401) {
+        alert(
+          messageData.message ??
+            "認証の有効期限が切れました。もう一度認証してください。"
+        );
+
+        router.replace("/start");
+        return;
+      }
+
+      if (!messageRes.ok) {
+        throw new Error(
+          messageData.message ??
+            "感想の投稿に失敗しました"
+        );
+      }
+
+      alert("評価と感想を送信しました！");
+
+      setComment("");
+      setModalRating(0);
+      setShowCommentModal(false);
+
+      /*
+      * 投稿後に研究室チャットへ移動する場合
+      */
+      router.replace(`/chat/${targetRoom.id}`);
+    } catch (error) {
+      console.error("感想投稿エラー:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "感想の投稿に失敗しました"
+      );
+    } finally {
+      setSendingComment(false);
+    }
+  };
 
   const visitedSpots = passport.stamps.map((stamp) => stamp.spotName);
 
@@ -134,8 +486,8 @@ export default function DashboardPage() {
       )
     : null;
 
-  const passportDesign =
-    stampCount >= 7
+  const passportDesign = stampCount >= 7
+  
       ? {
           level: 4,
           label: "Level 4",
@@ -184,8 +536,26 @@ export default function DashboardPage() {
           badgeColor: "#6b7280",
           description: "まずは研究室を訪問してスタンプを集めましょう。",
         };
+  const currentLevel = passport.nft?.level ?? 0;
 
-  return (
+  const shouldShowVoteNotification =
+    currentLevel >= 2 &&
+    passport.user.voteFeatureViewedAt === null;
+  
+  const shouldShowProposalNotification =
+    currentLevel >= 3 &&
+    passport.user.proposalFeatureViewedAt === null;
+
+  const shouldShowSurveyNotification =
+    currentLevel >= 4 &&
+    passport.user.surveyCompletedAt === null;
+
+  const canSubmitStampFeedback =
+    modalRating > 0 &&
+    comment.trim().length > 0 &&
+    !sendingComment;
+
+    return (
     <div
       style={{
         minHeight: "100vh",
@@ -268,6 +638,123 @@ export default function DashboardPage() {
             </button>
           </div>
         </header>
+
+        {shouldShowVoteNotification && (
+          <section
+            style={{
+              marginBottom: "20px",
+              padding: "18px",
+              borderRadius: "18px",
+              backgroundColor: "#f5f3ff",
+              border: "2px solid #8b5cf6",
+            }}
+          >
+            <h2>🗳 投票機能が解放されました！</h2>
+
+            <p>
+              オープンキャンパスに関する投票へ参加できます。
+            </p>
+
+            <button
+              onClick={() => {
+                void handleOpenFeature("vote");
+              }}
+              style={styles.primaryButton}
+            >
+              投票へ
+            </button>
+          </section>
+        )}
+
+        {shouldShowProposalNotification && (
+          <section
+            style={{
+              marginBottom: "20px",
+              padding: "18px",
+              borderRadius: "18px",
+              backgroundColor: "#fffbeb",
+              border: "2px solid #f59e0b",
+            }}
+          >
+            <h2>💡 提案機能が解放されました！</h2>
+
+            <p>
+              新しい投票テーマを提案できます。
+            </p>
+
+            <button
+              onClick={() => {
+                void handleOpenFeature("proposal");
+              }}
+              style={styles.primaryButton}
+            >
+              提案へ
+            </button>
+          </section>
+        )}
+        {shouldShowSurveyNotification && (
+          <section
+            style={{
+              marginBottom: "20px",
+              padding: "20px",
+              borderRadius: "18px",
+              backgroundColor: "#ecfdf5",
+              border: "2px solid #10b981",
+              boxShadow: "0 8px 24px rgba(16, 185, 129, 0.12)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    margin: "0 0 8px",
+                    color: "#065f46",
+                    fontSize: "21px",
+                  }}
+                >
+                  🎉 スタンプラリーご参加ありがとうございました！
+                </h2>
+
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#475569",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  アンケートのご協力をお願いいたします。
+                  感想やご意見を、今後のオープンキャンパス改善に活用します。
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push("/survey")}
+                style={{
+                  padding: "13px 22px",
+                  borderRadius: "999px",
+                  border: "none",
+                  backgroundColor: "#10b981",
+                  color: "#ffffff",
+                  fontWeight: "bold",
+                  fontSize: "15px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                アンケートはこちら
+              </button>
+            </div>
+          </section>
+        )}
 
         <div
           style={{
@@ -422,7 +909,7 @@ export default function DashboardPage() {
                 <button style={styles.primaryButton} onClick={() => router.push("/scan")}>
                   QRスタンプ取得
                 </button>
-                <button style={styles.secondaryButton} onClick={() => router.push("/proposals")}>
+                <button style={styles.secondaryButton} onClick={() => void handleOpenFeature("vote")}>
                   投票画面
                 </button>
                 <button style={styles.secondaryButton} onClick={() => router.push("/chat")}>
@@ -481,16 +968,8 @@ export default function DashboardPage() {
             >
               <h2 style={{ marginTop: 0 }}>ユーザー情報</h2>
               <p>
-                <strong>名前：</strong>
-                {passport.user.name}
-              </p>
-              <p>
-                <strong>メール：</strong>
-                {passport.user.email}
-              </p>
-              <p style={{ wordBreak: "break-all" }}>
-                <strong>Symbolアドレス：</strong>
-                {passport.wallet?.symbolAddress ?? "未登録"}
+                <strong>表示名：</strong>
+                {passport.user.name || "名無し"}
               </p>
             </section>
 
@@ -689,6 +1168,351 @@ export default function DashboardPage() {
             >
               閉じる
             </button>
+          </div>
+        </div>
+      )}
+
+      {showCommentModal && (
+        <div
+          onClick={() => {
+            if (sendingComment) {
+              return;
+            }
+
+            setShowCommentModal(false);
+            setComment("");
+            setModalRating(0);
+            router.replace("/dashboard");
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "16px",
+            zIndex: 1000,
+          }}
+        >
+          {/* モーダル本体 */}
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              backgroundColor: "#ffffff",
+              borderRadius: "22px",
+              padding: "24px",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              style={{
+                textAlign: "center",
+                marginBottom: "24px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "48px",
+                  marginBottom: "12px",
+                }}
+              >
+                🎉
+              </div>
+
+              <h2
+                style={{
+                  margin: "0 0 12px",
+                  color: "#0f172a",
+                }}
+              >
+                スタンプ獲得！
+              </h2>
+
+              <p
+                style={{
+                  color: "#475569",
+                  lineHeight: 1.8,
+                  margin: 0,
+                }}
+              >
+                <strong>{spotName}</strong>
+                へ来てくださりありがとうございます！
+                <br />
+                印象に残ったことや感想を書いてみませんか？
+              </p>
+
+              {didLevelUp && (
+                  <div
+                    style={{
+                      marginTop: "24px",
+                      padding: "18px",
+                      borderRadius: "16px",
+                      backgroundColor: "#fef3c7",
+                      border: "2px solid #f59e0b",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "34px",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      🎉
+                    </div>
+
+                    <h3
+                      style={{
+                        margin: 0,
+                        color: "#b45309",
+                      }}
+                    >
+                      LEVEL UP !!
+                    </h3>
+
+                    <p
+                      style={{
+                        marginTop: "10px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Level {previousLevel}
+                      {" → "}
+                      Level {newLevel}
+                    </p>
+
+                    {unlockedFeature === "vote" && (
+                      <>
+                        <p>
+                          🗳 投票機能が解放されました！
+                        </p>
+
+                        <button
+                          onClick={() => {
+                            void handleOpenFeature("vote");
+                          }}
+                          style={{
+                            marginTop: "10px",
+                            padding: "12px 22px",
+                            borderRadius: "999px",
+                            border: "none",
+                            backgroundColor: "#f59e0b",
+                            color: "#fff",
+                            fontWeight: "bold",
+                            cursor: "pointer",
+                          }}
+                        >
+                          投票へ
+                        </button>
+                      </>
+                    )}
+
+                    {unlockedFeature === "proposal" && (
+                      <>
+                        <p>
+                          💡 提案機能が解放されました！
+                        </p>
+
+                        <button
+                          onClick={() => {
+                            void handleOpenFeature("proposal");
+                          }}
+                          style={{
+                            marginTop: "10px",
+                            padding: "12px 22px",
+                            borderRadius: "999px",
+                            border: "none",
+                            backgroundColor: "#f59e0b",
+                            color: "#fff",
+                            fontWeight: "bold",
+                            cursor: "pointer",
+                          }}
+                        >
+                          提案へ
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
+            </div>
+            <section
+              style={{
+                marginBottom: "20px",
+                padding: "18px",
+                borderRadius: "16px",
+                border: "1px solid #fde68a",
+                backgroundColor: "#fffbeb",
+                textAlign: "center",
+              }}
+            >
+              <h3
+                style={{
+                  margin: "0 0 8px",
+                  color: "#92400e",
+                  fontSize: "17px",
+                }}
+              >
+                この研究室はいかがでしたか？
+              </h3>
+
+              <p
+                style={{
+                  margin: "0 0 12px",
+                  color: "#78716c",
+                  fontSize: "13px",
+                }}
+              >
+                星を押して5段階で評価してください。
+              </p>
+
+              <div
+                role="radiogroup"
+                aria-label={`${spotName}の研究室評価`}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: "6px",
+                }}
+              >
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    role="radio"
+                    aria-checked={modalRating === star}
+                    aria-label={`${star}点`}
+                    disabled={sendingComment}
+                    onClick={() => setModalRating(star)}
+                    style={{
+                      padding: "2px",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      color:
+                        star <= modalRating
+                          ? "#f59e0b"
+                          : "#d1d5db",
+                      cursor: sendingComment
+                        ? "not-allowed"
+                        : "pointer",
+                      fontSize: "36px",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+
+              <p
+                style={{
+                  minHeight: "20px",
+                  margin: "10px 0 0",
+                  color: "#92400e",
+                  fontSize: "13px",
+                  fontWeight: "bold",
+                }}
+              >
+                {modalRating > 0
+                  ? `${modalRating}点を選択中`
+                  : "評価を選択してください"}
+              </p>
+            </section>
+            <textarea
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              placeholder="例）先生が優しく説明してくれた！研究内容が面白かった！"
+              style={{
+                width: "100%",
+                minHeight: "140px",
+                padding: "14px",
+                borderRadius: "14px",
+                border: "1px solid #cbd5e1",
+                resize: "vertical",
+                fontSize: "15px",
+                lineHeight: 1.6,
+                boxSizing: "border-box",
+                marginBottom: "12px",
+                outline: "none",
+              }}
+            />
+
+            <p
+              style={{
+                margin: "0 0 20px",
+                color: "#64748b",
+                fontSize: "13px",
+                lineHeight: 1.6,
+              }}
+            >
+              星評価と感想の両方を入力すると送信できます。
+              投稿した感想は、この研究室のチャットで他の参加者と共有されます。
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleCommentSubmit}
+                disabled={!canSubmitStampFeedback}
+                style={{
+                  flex: "1 1 180px",
+                  padding: "14px",
+                  borderRadius: "999px",
+                  border: "none",
+                  backgroundColor: canSubmitStampFeedback
+                    ? "#2563eb"
+                    : "#94a3b8",
+                  color: "#ffffff",
+                  fontWeight: "bold",
+                  fontSize: "15px",
+                  cursor: canSubmitStampFeedback
+                    ? "pointer"
+                    : "not-allowed",
+                }}
+              >
+                {sendingComment
+                  ? "送信中..."
+                  : "評価と感想を送信"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCommentModal(false);
+                  setComment("");
+                  setModalRating(0);
+                  router.replace("/dashboard");
+                }}
+                disabled={sendingComment}
+                style={{
+                  flex: "1 1 180px",
+                  padding: "14px",
+                  borderRadius: "999px",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#ffffff",
+                  color: "#334155",
+                  fontWeight: "bold",
+                  fontSize: "15px",
+                  cursor: sendingComment
+                    ? "not-allowed"
+                    : "pointer",
+                }}
+              >
+                あとで評価・感想を書く
+              </button>
+            </div>
           </div>
         </div>
       )}

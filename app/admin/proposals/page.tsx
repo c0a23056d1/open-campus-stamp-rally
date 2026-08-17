@@ -46,14 +46,10 @@ export default function AdminProposalsPage() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
 
   const fetchProposals = async () => {
-    const adminUserId = localStorage.getItem("userId");
 
-    if (!adminUserId) {
-      router.push("/login");
-      return;
-    }
-
-    const res = await fetch(`/api/admin/proposals?adminUserId=${adminUserId}`);
+    const res = await fetch("/api/admin/proposals", {
+      credentials: "include",
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -70,7 +66,6 @@ export default function AdminProposalsPage() {
   }, []);
 
   const handleCreateProposal = async () => {
-    const adminUserId = localStorage.getItem("userId");
 
     const options = optionsText
       .split("\n")
@@ -79,11 +74,11 @@ export default function AdminProposalsPage() {
 
     const res = await fetch("/api/admin/proposals", {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        adminUserId,
         title,
         description,
         requiredLevel,
@@ -108,18 +103,17 @@ export default function AdminProposalsPage() {
   };
 
   const handleApproveProposal = async (proposalId: number) => {
-    const adminUserId = localStorage.getItem("userId");
 
     const ok = confirm("このProposalを承認しますか？");
     if (!ok) return;
 
     const res = await fetch("/api/admin/proposals/approve", {
       method: "PATCH",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        adminUserId,
         proposalId,
       }),
     });
@@ -325,7 +319,7 @@ export default function AdminProposalsPage() {
                       <p>
                         <strong>作成者：</strong>
                         {proposal.creator
-                          ? proposal.creator.name || proposal.creator.email
+                          ? proposal.creator.name || proposal.creator.email || "名無し"
                           : "管理者"}
                       </p>
                     </div>

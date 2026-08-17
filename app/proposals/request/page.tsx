@@ -14,7 +14,6 @@ export default function ProposalRequestPage() {
   const [optionsText, setOptionsText] = useState("");
 
   const handleSubmit = async () => {
-    const userId = localStorage.getItem("userId");
 
     const options = optionsText
       .split("\n")
@@ -26,8 +25,8 @@ export default function ProposalRequestPage() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
-        userId,
         title,
         description,
         requiredLevel,

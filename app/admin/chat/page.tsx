@@ -23,15 +23,12 @@ export default function AdminChatPage() {
 
   const fetchRooms = async () => {
     try {
-        const adminUserId = localStorage.getItem("userId");
-
-        if (!adminUserId) {
-          router.push("/login");
-          return;
-        }
 
         const res = await fetch(
-          `/api/admin/chat/rooms?adminUserId=${adminUserId}`
+          `/api/admin/chat/rooms`,
+          {
+            credentials: "include",
+          }
         );
 
         const data = await res.json();
@@ -56,15 +53,14 @@ export default function AdminChatPage() {
   }, []);
 
   const handleCreateRoom = async () => {
-    const adminUserId = localStorage.getItem("userId");
 
     const res = await fetch("/api/admin/chat/rooms", {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        adminUserId,
         roomName,
         description,
       }),
