@@ -19,6 +19,8 @@ model User {
   createdAt    DateTime @default(now())
   consentAt    DateTime?
 
+  schoolYear   String?
+
   // 投票画面を初めて開いた日時
   voteFeatureViewedAt DateTime?
 
